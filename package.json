@@ -1,0 +1,22 @@
+{
+  "name": "memory-poc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@qdrant/qdrant-js": "^1.17.0",
+    "dotenv": "^17.3.1",
+    "ollama": "^0.6.3"  }
+}

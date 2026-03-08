@@ -1,6 +1,6 @@
 import { QdrantClient } from "@qdrant/js-client-rest";
-import { MemoryWithVector, StoredMemory } from "./types";
-import {QDRANT_URL} from "./config"
+import { MemoryWithVector, StoredMemory } from "./types.js";
+import {QDRANT_URL} from "./config.js"
 
 
 
@@ -23,9 +23,6 @@ export async function setupCollection(): Promise<void> {
         distance: "Cosine",
       },
     });
-    console.log("✅ Qdrant collection created");
-  } else {
-    console.log("✅ Qdrant collection already exists");
   }
 }
 
@@ -45,7 +42,6 @@ export async function saveMemories(
   }));
 
   await client.upsert(COLLECTION_NAME, { points });
-  console.log(`✅ Saved ${points.length} memories to Qdrant`);
 }
 
 export async function searchMemories(

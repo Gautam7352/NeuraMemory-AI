@@ -1,11 +1,7 @@
-import dotenv from "dotenv";
-dotenv.config();
-
-function requireEnv(name:string) {
+function requireEnv(name: string) {
   const value = process.env[name];
 
   if (!value || value.trim() === "") {
-    console.error(`❌ Environment variable ${name} is missing or empty`);
     process.exit(1);
   }
 

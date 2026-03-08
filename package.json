@@ -4,19 +4,24 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "ts-node src/index.ts",
+    "mcp": "ts-node src/mcp-server.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "devDependencies": {
     "@types/node": "^25.3.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "@qdrant/qdrant-js": "^1.17.0",
+    "@types/express": "^5.0.6",
     "dotenv": "^17.3.1",
-    "ollama": "^0.6.3"  }
+    "express": "^5.2.1",
+    "ollama": "^0.6.3"
+  }
 }

@@ -1,5 +1,5 @@
 import ollama from "ollama";
-import { Memory } from "./types";
+import { Memory } from "./types.js";
 
 export async function extractMemories(text: string): Promise<Memory[]> {
  const prompt = `

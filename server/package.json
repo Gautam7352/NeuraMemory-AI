@@ -12,8 +12,12 @@
     "format": "prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/dotenv": "^6.1.1",
     "@types/node": "^25.4.0",
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
@@ -24,5 +28,11 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.0"
+  },
+  "dependencies": {
+    "@qdrant/js-client-rest": "^1.17.0",
+    "dotenv": "^17.3.1",
+    "mongodb": "^7.1.0",
+    "openai": "^6.27.0"
   }
 }

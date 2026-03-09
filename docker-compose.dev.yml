@@ -1,0 +1,24 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+      - "9229:9229" # For debugging
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"

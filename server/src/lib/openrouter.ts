@@ -18,7 +18,9 @@ export function getOpenRouterClient(): OpenAI {
       baseURL: baseUrl,
       apiKey,
       defaultHeaders: {
-        ...(env.OPENROUTER_REFERER && { 'HTTP-Referer': env.OPENROUTER_REFERER }),
+        ...(env.OPENROUTER_REFERER && {
+          'HTTP-Referer': env.OPENROUTER_REFERER,
+        }),
         ...(env.OPENROUTER_TITLE && { 'X-Title': env.OPENROUTER_TITLE }),
       },
     });

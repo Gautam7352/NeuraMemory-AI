@@ -3,6 +3,7 @@
 This is the backend server for NeuraMemory-AI, built with TypeScript and modern development tooling.
 
 ## Tech Stack
+
 - **Runtime**: Node.js (ESM)
 - **Language**: [TypeScript](https://www.typescript.org/) (Target: ESNext)
 - **Development Runner**: [tsx](https://tsx.is/)
@@ -19,22 +20,29 @@ For detailed information about the project's architecture and coding standards, 
 ## Getting Started
 
 ### Installation
+
 ```bash
 npm install
 ```
 
 ### Development
+
 To start the server with auto-reload (using `tsx watch`):
+
 ```bash
 npm run dev
 ```
 
 ### Production
+
 Build the project:
+
 ```bash
 npm run build
 ```
+
 Start the compiled server:
+
 ```bash
 npm run start
 ```

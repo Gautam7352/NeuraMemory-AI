@@ -1,27 +1,32 @@
-# Build stage
+# ─── Build Stage ─────────────────────────────────────────────────────────────
 FROM node:24-alpine AS builder
 
 WORKDIR /app
 
+# Install all dependencies (including devDependencies needed for tsc)
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
-COPY . .
+# Copy source and compile TypeScript → dist/
+COPY tsconfig.json ./
+COPY src ./src
 RUN npm run build
 
-# Production stage
+# ─── Production Stage ─────────────────────────────────────────────────────────
 FROM node:24-alpine AS runner
 
 WORKDIR /app
 
-# Ensure we have the production node_modules
+# Install only production dependencies
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
+# Copy compiled output from the builder stage
 COPY --from=builder /app/dist ./dist
 
-# Run as non-root user
+# Run as non-root user for security
 USER node
 
-# Standard entry point
+EXPOSE 3000
+
 CMD ["node", "dist/index.js"]

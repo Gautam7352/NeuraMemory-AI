@@ -1,6 +1,9 @@
 import express from 'express';
+import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
 import authRouter from './routes/auth.route.js';
+import memoryRouter from './routes/memorie.route.js';
+import swaggerSpec from './config/swagger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { ensureUserIndexes } from './repositories/user.repository.js';
 import { getMongoClient } from './lib/mongodb.js';
@@ -9,9 +12,18 @@ const app = express();
 app.use(express.json());
 
 // ---------------------------------------------------------------------------
+// API Documentation (Swagger UI)
+// ---------------------------------------------------------------------------
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api-docs/spec.json', (_req, res) => {
+  res.json(swaggerSpec);
+});
+
+// ---------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------
 app.use('/api/v1', authRouter);
+app.use('/api/v1/memories', memoryRouter);
 
 // ---------------------------------------------------------------------------
 // Error handler — must be registered after all routes

@@ -30,6 +30,8 @@ services:
       - ./client/index.html:/app/index.html:ro
       - ./client/vite.config.ts:/app/vite.config.ts:ro
       - ./client/tsconfig.json:/app/tsconfig.json:ro
+    ports:
+      - "5173:5173"
     environment:
       - VITE_API_URL=http://localhost:3000
     restart: no

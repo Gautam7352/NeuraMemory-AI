@@ -2,8 +2,11 @@ FROM node:24-alpine
 
 WORKDIR /app
 
+RUN corepack enable pnpm
+
 COPY package*.json ./
-RUN npm install
+
+RUN pnpm install
 
 COPY . .
 

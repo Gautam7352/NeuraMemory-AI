@@ -1,5 +1,6 @@
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
+import cors from 'cors';
 import { env } from './config/env.js';
 import authRouter from './routes/auth.route.js';
 import memoryRouter from './routes/memorie.route.js';
@@ -10,6 +11,19 @@ import { getMongoClient } from './lib/mongodb.js';
 
 const app = express();
 app.use(express.json());
+
+// cors addition
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:3000",
+      // add production url
+    ],
+    credentials: true,
+  })
+);
 
 // ---------------------------------------------------------------------------
 // API Documentation (Swagger UI)

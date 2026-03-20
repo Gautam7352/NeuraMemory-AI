@@ -1,9 +1,5 @@
-<<<<<<< design-branch
 
-
-
-
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router';
 
 import Navbar from './components/Navbar';
 import MainArea from './components/MainArea';
@@ -74,10 +70,3 @@ function App() {
 }
 
 export default App;
-=======
-function App() {
-  return <h1>NuraMemory-AI</h1>;
-}
-
-export default App;
->>>>>>> main

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './Navbar.module.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -45,19 +45,19 @@ const Navbar = () => {
             flexDirection: 'column',
             alignItems: 'flex-start',
           }}>
-            <span style={{display: 'inline-flex', alignItems: 'center'}}>
-              <svg width="32" height="32" viewBox="0 0 38 38" fill="none" style={{marginRight: 8, flexShrink: 0}} xmlns="http://www.w3.org/2000/svg">
-                <rect x="7" y="7" width="24" height="24" rx="6" fill="#18181b" stroke="#38bdf8" strokeWidth="2"/>
-                <rect x="13" y="13" width="12" height="12" rx="3" fill="#a78bfa" stroke="#38bdf8" strokeWidth="1.5"/>
-                <circle cx="13" cy="13" r="2" fill="#38bdf8"/>
-                <circle cx="25" cy="13" r="2" fill="#38bdf8"/>
-                <circle cx="13" cy="25" r="2" fill="#38bdf8"/>
-                <circle cx="25" cy="25" r="2" fill="#38bdf8"/>
-                <rect x="18" y="18" width="2" height="2" rx="1" fill="#fff"/>
-                <path d="M19 7V11" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M19 27V31" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M7 19H11" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M27 19H31" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round"/>
+            <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+              <svg width="32" height="32" viewBox="0 0 38 38" fill="none" style={{ marginRight: 8, flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg">
+                <rect x="7" y="7" width="24" height="24" rx="6" fill="#18181b" stroke="#38bdf8" strokeWidth="2" />
+                <rect x="13" y="13" width="12" height="12" rx="3" fill="#a78bfa" stroke="#38bdf8" strokeWidth="1.5" />
+                <circle cx="13" cy="13" r="2" fill="#38bdf8" />
+                <circle cx="25" cy="13" r="2" fill="#38bdf8" />
+                <circle cx="13" cy="25" r="2" fill="#38bdf8" />
+                <circle cx="25" cy="25" r="2" fill="#38bdf8" />
+                <rect x="18" y="18" width="2" height="2" rx="1" fill="#fff" />
+                <path d="M19 7V11" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M19 27V31" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M7 19H11" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M27 19H31" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               <span style={{
                 fontWeight: 900,
@@ -67,9 +67,9 @@ const Navbar = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
               }}>
-                <span style={{color: '#38bdf8'}}>Neura</span>
-                <span style={{color: '#64748b', fontWeight: 900}}>Memory</span>
-                <span style={{color: '#a78bfa', fontWeight: 900}}>AI</span>
+                <span style={{ color: '#38bdf8' }}>Neura</span>
+                <span style={{ color: '#64748b', fontWeight: 900 }}>Memory</span>
+                <span style={{ color: '#a78bfa', fontWeight: 900 }}>AI</span>
               </span>
             </span>
             <span style={{

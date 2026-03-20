@@ -54,6 +54,13 @@ export async function loginController(
     const { email, password } = result.data;
     const response = await loginService(email, password);
 
+    res.cookie("authorization", response.token, {
+      httpOnly: true,
+      secure: process.env['NODE_ENV'] === "production",
+      sameSite: "strict",
+      maxAge: 60 * 60 * 1000,
+    });
+    
     res.status(200).json(response);
   } catch (err) {
     next(err);

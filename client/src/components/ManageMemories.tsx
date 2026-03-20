@@ -62,7 +62,7 @@ const ManageMemories = () => {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-black p-3 sm:p-4 md:p-8">
       <div className="w-full max-w-7xl min-h-[70vh] bg-neutral-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-800 p-4 sm:p-6 md:p-10 flex flex-col gap-6 mx-auto">
-        <div className="w-full rounded-2xl border border-gray-700 bg-gradient-to-r from-neutral-900 via-neutral-900 to-slate-900/60 p-4 sm:p-5 md:p-6">
+        <div className="w-full rounded-2xl border border-gray-700 bg-linear-to-r from-neutral-900 via-neutral-900 to-slate-900/60 p-4 sm:p-5 md:p-6">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-300 mb-2">Memory Workspace</p>

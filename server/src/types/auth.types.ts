@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 export interface IUser {
   email: string;
   passwordHash: string;
+  apiKey?: string;
   createdAt: Date;
   updatedAt: Date;
 }

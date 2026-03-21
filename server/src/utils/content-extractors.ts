@@ -1,58 +1,55 @@
+/**
+ * Content extractors — convert raw inputs (URLs, documents) into plain text
+ * that can be fed to the LLM for memory extraction.
+ */
+
 import FirecrawlApp from '@mendable/firecrawl-js';
-import mammoth from 'mammoth';
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { env } from '../config/env.js';
-import {
-  extractTextWithUnstructured,
-  isUnstructuredConfigured,
-} from '../lib/unstructured.js';
 import { AppError } from './AppError.js';
-import { extractTextWithLocalOcr } from './ocr-local.js';
 
-type FirecrawlScrapeData = {
-  markdown?: string | null;
-};
+// ---------------------------------------------------------------------------
+// URL / Link content extraction
+// ---------------------------------------------------------------------------
 
-type FirecrawlScrapeResponse = {
-  success?: boolean;
-  error?: string;
-  markdown?: string | null;
-  data?: FirecrawlScrapeData | null;
-};
-
-function getFirecrawlApiKey(): string {
-  const apiKey = env.FIRECRAWL_API_KEY?.trim();
-  if (!apiKey) {
-    throw new AppError(
-      502,
-      'FIRECRAWL_API_KEY is not configured. URL memory ingestion is unavailable.',
-    );
-  }
-  return apiKey;
-}
-
+/**
+ * Fetches a URL and returns the main textual content.
+ *
+ * We use Firecrawl to extract high-quality markdown directly from the website.
+ */
 export async function extractTextFromUrl(url: string): Promise<string> {
   try {
-    const firecrawl = new FirecrawlApp({ apiKey: getFirecrawlApiKey() });
-
-    const responseUnknown = await firecrawl.scrape(url, {
-      formats: ['markdown'],
+    const firecrawl = new FirecrawlApp({
+      apiKey: process.env['FIRECRAWL_API_KEY'] || '',
     });
-    const response = responseUnknown as FirecrawlScrapeResponse;
+
+    // Attempt to scrape the URL, asking Firecrawl for markdown format
+    const response = (await firecrawl.scrape(url, {
+      formats: ['markdown'],
+    })) as {
+      success: boolean;
+      error?: string;
+      markdown?: string;
+      data?: { markdown?: string };
+    };
 
     if (response.success === false) {
       throw new AppError(
         422,
-        `Failed to scrape URL with Firecrawl: ${response.error ?? 'Unknown error'}`,
+        `Failed to scrape URL with Firecrawl: ${response.error || 'Unknown error'}`,
       );
     }
 
-    const markdown = response.markdown ?? response.data?.markdown ?? '';
-    return typeof markdown === 'string' ? markdown : '';
-  } catch (err) {
-    if (err instanceof AppError) {
-      throw err;
+    // `response.markdown` is typically where the markdown format appears.
+    // In some older versions, it might be nested under `data`.
+    const markdown =
+      response.markdown || (response.data && response.data.markdown) || '';
+
+    if (!markdown) {
+      return '';
     }
+
+    return markdown;
+  } catch (err) {
+    if (err instanceof AppError) throw err;
 
     const message =
       err instanceof Error ? err.message : 'Unknown error fetching URL';
@@ -60,10 +57,22 @@ export async function extractTextFromUrl(url: string): Promise<string> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Document text extraction
+// ---------------------------------------------------------------------------
+
+/**
+ * Extracts text from an uploaded document buffer.
+ *
+ * Supported MIME types:
+ *  - text/plain, text/markdown      → decode UTF‑8
+ *  - application/pdf                 → basic text layer extraction
+ *  - application/vnd.openxmlformats‑officedocument.wordprocessingml.document
+ *                                    → extract raw text from docx XML
+ */
 export async function extractTextFromDocument(
   buffer: Buffer,
   mimetype: string,
-  filename = 'document.pdf',
 ): Promise<string> {
   switch (mimetype) {
     case 'text/plain':
@@ -71,7 +80,7 @@ export async function extractTextFromDocument(
       return buffer.toString('utf-8');
 
     case 'application/pdf':
-      return extractTextFromPdfBuffer(buffer, filename);
+      return extractTextFromPdfBuffer(buffer);
 
     case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
       return extractTextFromDocxBuffer(buffer);
@@ -84,131 +93,129 @@ export async function extractTextFromDocument(
   }
 }
 
-async function extractTextFromPdfBuffer(
-  buffer: Buffer,
-  filename: string,
-): Promise<string> {
-  if (!isOcrForced()) {
-    try {
-      const text = await extractTextWithPdfJs(buffer);
-      if (text) {
-        return text;
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Very lightweight PDF text extraction.
+ *
+ * PDF files store text in stream objects between `BT` (Begin Text) and `ET`
+ * (End Text) markers. Text‑showing operators like `Tj`, `TJ`, `'`, and `"`
+ * carry the actual string content inside parentheses `(…)`.
+ *
+ * This extractor:
+ * 1. Converts the raw buffer to a latin‑1 string (PDFs are byte‑oriented).
+ * 2. Finds all `BT … ET` blocks.
+ * 3. Inside each block, captures strings enclosed in `(…)`.
+ * 4. Joins everything with spaces / newlines.
+ *
+ * Limitations:
+ * - Only works with PDFs whose text layer is NOT compressed (FlateDecode, etc.).
+ * - Scanned / image‑only PDFs will return empty text.
+ * - Complex encodings (CIDFont, ToUnicode CMaps) are not decoded.
+ *
+ * For production‑grade extraction, swap this with `pdf-parse` or `pdfjs-dist`.
+ */
+function extractTextFromPdfBuffer(buffer: Buffer): string {
+  const raw = buffer.toString('latin1');
+
+  const textBlocks: string[] = [];
+  const btEtRegex = /BT\s([\s\S]*?)ET/g;
+  let blockMatch: RegExpExecArray | null;
+
+  while ((blockMatch = btEtRegex.exec(raw)) !== null) {
+    const block = blockMatch[1];
+    if (!block) continue;
+
+    // Match strings inside parentheses — the text operands of Tj / TJ / ' / "
+    const stringRegex = /\(([^)]*)\)/g;
+    let strMatch: RegExpExecArray | null;
+
+    while ((strMatch = stringRegex.exec(block)) !== null) {
+      const decoded = strMatch[1];
+      if (decoded) {
+        textBlocks.push(decoded);
       }
-    } catch (err) {
-      console.warn('[PDF] pdfjs-dist extraction failed:', err);
     }
   }
 
-  if (isUnstructuredConfigured()) {
-    try {
-      const text = await extractTextWithUnstructured(buffer, filename);
-      if (text) {
-        return normaliseExtractedPdfText(text);
-      }
-    } catch (err) {
-      console.warn('[PDF] Unstructured OCR failed:', err);
-    }
-  }
+  const text = textBlocks.join(' ').trim();
 
-  if (isLocalOcrEnabled()) {
-    const lang = getLocalOcrLanguage();
-    try {
-      const text = await extractTextWithLocalOcr(buffer, lang);
-      if (text) {
-        return normaliseExtractedPdfText(text);
-      }
-    } catch (err) {
-      console.warn('[PDF] Local OCR failed:', err);
-    }
-  }
-
-  throw new AppError(
-    422,
-    'Could not extract text from the PDF. The file may be scanned/image-based or use an unsupported encoding.',
-  );
-}
-
-async function extractTextWithPdfJs(buffer: Buffer): Promise<string> {
-  pdfjs.GlobalWorkerOptions.workerSrc = '';
-  const data = new Uint8Array(buffer);
-  const loadingTask = pdfjs.getDocument({ data });
-  const document = await loadingTask.promise;
-  const pages: string[] = [];
-
-  for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
-    const page = await document.getPage(pageNumber);
-    const content = await page.getTextContent();
-    const strings = content.items
-      .map((item) =>
-        item && typeof item === 'object' ? (item as { str?: string }).str : '',
-      )
-      .filter(
-        (value): value is string =>
-          typeof value === 'string' && value.trim().length > 0,
-      );
-
-    if (strings.length > 0) {
-      pages.push(strings.join(' '));
-    }
-  }
-
-  return normaliseExtractedPdfText(pages.join('\n'));
-}
-
-function isLocalOcrEnabled(): boolean {
-  const raw = env.OCR_ENABLE_LOCAL_FALLBACK ?? 'true';
-  const normalised = raw.trim().toLowerCase();
-  if (['true', '1', 'yes', 'y', 'on'].includes(normalised)) return true;
-  if (['false', '0', 'no', 'n', 'off'].includes(normalised)) return false;
-  return true;
-}
-
-function getLocalOcrLanguage(): string {
-  const raw = env.OCR_TESSERACT_LANG ?? 'eng';
-  return raw.trim() || 'eng';
-}
-
-function isOcrForced(): boolean {
-  const raw = env.OCR_FORCE ?? 'false';
-  const normalised = raw.trim().toLowerCase();
-  if (['true', '1', 'yes', 'y', 'on'].includes(normalised)) return true;
-  if (['false', '0', 'no', 'n', 'off'].includes(normalised)) return false;
-  return false;
-}
-
-function normaliseExtractedPdfText(text: string): string {
-  return text
-    .split('\0')
-    .join('')
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\r/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .join('\n')
-    .trim();
-}
-
-async function extractTextFromDocxBuffer(buffer: Buffer): Promise<string> {
-  try {
-    const result = await mammoth.extractRawText({ buffer });
-    if (result.messages.length > 0) {
-      console.warn('[DOCX] Extraction warnings:', result.messages);
-    }
-    const text = result.value.trim();
-    if (!text) {
-      throw new AppError(
-        422,
-        'Could not extract text from the DOCX file. The document may be empty.',
-      );
-    }
-    return text;
-  } catch (err) {
-    if (err instanceof AppError) throw err;
+  if (!text) {
     throw new AppError(
       422,
-      `DOCX extraction failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      'Could not extract text from the PDF. The file may be scanned/image‑based or use compressed text streams. Please provide a text‑based PDF.',
     );
   }
+
+  return text;
+}
+
+/**
+ * Very lightweight DOCX text extraction.
+ *
+ * A `.docx` file is a ZIP archive. The main document text lives inside
+ * `word/document.xml`. We locate that entry, extract it, strip XML tags,
+ * and return the raw text content.
+ *
+ * Limitations:
+ * - Only extracts from `word/document.xml` — headers, footers, footnotes,
+ *   and embedded charts are ignored.
+ * - Images are ignored.
+ *
+ * For production use, swap with a library like `mammoth` or `docx-parser`.
+ */
+function extractTextFromDocxBuffer(buffer: Buffer): string {
+  // DOCX = ZIP. The ZIP local file header signature is PK\x03\x04.
+  // We scan for the `word/document.xml` entry, find its data, and strip XML.
+  const marker = 'word/document.xml';
+  const idx = buffer.indexOf(marker);
+
+  if (idx === -1) {
+    throw new AppError(
+      422,
+      'The uploaded DOCX file appears to be malformed — could not locate word/document.xml.',
+    );
+  }
+
+  // A quick‑and‑dirty approach: extract everything from the buffer as UTF‑8
+  // and look for the XML content between `<?xml` and the end of the entry.
+  const asString = buffer.toString('utf-8');
+
+  // Find the XML portion of word/document.xml
+  const xmlStart = asString.indexOf('<?xml', idx);
+  if (xmlStart === -1) {
+    throw new AppError(
+      422,
+      'Could not parse the DOCX file — no XML content found.',
+    );
+  }
+
+  // Find the end of the XML: look for the next PK signature or end of buffer
+  const nextPk = asString.indexOf('PK', xmlStart + 10);
+  const xmlContent =
+    nextPk === -1 ? asString.slice(xmlStart) : asString.slice(xmlStart, nextPk);
+
+  // Strip XML tags, decode entities, collapse whitespace
+  const text = xmlContent
+    .replace(/<w:p[^>]*>/g, '\n') // paragraph boundaries → newlines
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  if (!text) {
+    throw new AppError(
+      422,
+      'Could not extract text from the DOCX file. The document may be empty.',
+    );
+  }
+
+  return text;
 }

@@ -108,7 +108,6 @@ export async function processDocument(
   const text = await extractTextFromDocument(
     input.buffer,
     input.mimetype,
-    input.filename,
   );
   return processText(text, input.userId, 'document', input.filename);
 }

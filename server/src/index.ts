@@ -10,6 +10,7 @@ import swaggerSpec from './config/swagger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { ensureUserIndexes } from './repositories/user.repository.js';
 import { getMongoClient } from './lib/mongodb.js';
+import mcpRouter from './routes/mcp.route.js';
 import { getQdrantClient, closeQdrantClient } from './lib/qdrant.js';
 
 const app = express();
@@ -31,7 +32,7 @@ app.use(
       }
     },
     credentials: true,
-  })
+  }),
 );
 
 // ---------------------------------------------------------------------------
@@ -49,6 +50,7 @@ if (env.NODE_ENV !== 'production') {
 // ---------------------------------------------------------------------------
 app.use('/api/v1', authRouter);
 app.use('/api/v1/memories', memoryRouter);
+app.use('/api/v1/mcp', mcpRouter);
 
 // ---------------------------------------------------------------------------
 // Error handler — must be registered after all routes

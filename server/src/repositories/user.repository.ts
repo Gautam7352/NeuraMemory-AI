@@ -26,6 +26,18 @@ export async function findUserByEmail(
 }
 
 /**
+ * Finds a single user document by API Key.
+ */
+export async function findUserByApiKey(
+  apiKey: string,
+): Promise<WithId<IUser> | null> {
+  const db = await getDb();
+  return db.collection<IUser>(COLLECTION).findOne({ apiKey });
+}
+
+
+
+/**
  * Finds a single user document by its MongoDB ObjectId string.
  *
  * @planned vNext
@@ -56,4 +68,18 @@ export async function createUser(
   const result = await db.collection<IUser>(COLLECTION).insertOne(user);
 
   return { _id: result.insertedId, ...user };
+}
+
+/**
+ * Updates a user's API Key.
+ */
+export async function updateUserApiKey(
+  id: string,
+  apiKey: string,
+): Promise<void> {
+  const { ObjectId } = await import('mongodb');
+  const db = await getDb();
+  await db
+    .collection<IUser>(COLLECTION)
+    .updateOne({ _id: new ObjectId(id) }, { $set: { apiKey, updatedAt: new Date() } });
 }

@@ -41,6 +41,10 @@ const swaggerSpec: JsonObject = {
       description:
         'Create, retrieve, and delete memories. All endpoints require JWT authentication.',
     },
+    {
+      name: 'MCP',
+      description: 'Model Context Protocol endpoints for AI integrations.',
+    },
   ],
 
   // ---------------------------------------------------------------------------
@@ -104,6 +108,16 @@ const swaggerSpec: JsonObject = {
           },
         },
         required: ['success', 'message'],
+      },
+
+      ApiKeyResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: true },
+          message: { type: 'string', example: 'API key generated successfully.' },
+          apiKey: { type: 'string', example: 'sk_8f7d9a0c1b2e3d4f5g...' },
+        },
+        required: ['success', 'message', 'apiKey'],
       },
 
       // ── Memories ────────────────────────────────────────────────────────
@@ -281,6 +295,34 @@ const swaggerSpec: JsonObject = {
             },
           },
           '429': { description: 'Rate limit exceeded' },
+        },
+      },
+    },
+
+    '/api/v1/api-key': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Generate an API key',
+        description:
+          'Generates a newly minted API key for the authenticated user to connect their LLM via the MCP server.',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '201': {
+            description: 'API key generated',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiKeyResponse' },
+              },
+            },
+          },
+          '401': {
+            description: 'Missing or invalid JWT',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
         },
       },
     },
@@ -597,6 +639,45 @@ const swaggerSpec: JsonObject = {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },
               },
             },
+          },
+        },
+      },
+    },
+
+    // ── MCP ───────────────────────────────────────────────────────────────
+    '/api/v1/mcp/health': {
+      get: {
+        tags: ['MCP'],
+        summary: 'MCP Health Check',
+        description: 'Simple unauthenticated endpoint to verify the MCP server is alive.',
+        responses: {
+          '200': {
+            description: 'MCP server is healthy',
+          },
+        },
+      },
+    },
+
+    '/api/v1/mcp/sse': {
+      get: {
+        tags: ['MCP'],
+        summary: 'Establish MCP SSE Connection',
+        description: 'Endpoint to establish a Server-Sent Events stream for Model Context Protocol. A valid user API Key is strictly required.',
+        parameters: [
+          {
+            name: 'apiKey',
+            in: 'query',
+            required: false,
+            schema: { type: 'string' },
+            description: 'User API Key. Can also be provided via the `Authorization: Bearer <key>` or `x-api-key` HTTP headers.',
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'SSE stream connection established',
+          },
+          '401': {
+            description: 'Missing or invalid API key',
           },
         },
       },

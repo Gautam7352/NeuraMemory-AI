@@ -1,6 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { loginService, registerService } from '../services/auth.service.js';
+import {
+  loginService,
+  registerService,
+  generateApiService,
+} from '../services/auth.service.js';
 import { AppError } from '../utils/AppError.js';
 
 const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -58,13 +62,12 @@ export async function loginController(
 
     res.cookie("neura_token", response.token, {
       httpOnly: true,
-      secure: process.env['NODE_ENV'] === "production",
-      sameSite: "lax",
-      maxAge: COOKIE_MAX_AGE_MS,
+      secure: process.env['NODE_ENV'] === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000,
     });
 
-    const { token: _token, ...safeResponse } = response;
-    res.status(200).json(safeResponse);
+    res.status(200).json(response);
   } catch (err) {
     next(err);
   }
@@ -108,8 +111,49 @@ export function logoutController(_req: Request, res: Response): void {
     sameSite: "lax",
   });
   res.status(200).json({ success: true, message: "Logged out successfully." });
+export async function generateApiKeyController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new AppError(401, 'Unauthorized');
+    }
+
+    const response = await generateApiService(userId);
+
+    res.status(200).json({
+      success: true,
+      data: response,
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
-export function meController(req: Request, res: Response): void {
-  res.status(200).json({ success: true, user: req.user });
+export async function meController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new AppError(401, 'Unauthorized');
+    }
+    
+    // We can just import and use findUserById from repository
+    const { findUserById } = await import('../repositories/user.repository.js');
+    const user = await findUserById(userId);
+    if (!user) {
+      throw new AppError(404, 'User not found');
+    }
+
+    const safeUser = { ...user };
+    res.status(200).json({ success: true, data: { user: safeUser } });
+  } catch (err) {
+    next(err);
+  }
 }

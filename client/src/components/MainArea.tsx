@@ -10,8 +10,19 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     id: 'text',
     label: 'Text',
     icon: (
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h10M4 14h16M4 18h10" />
+      <svg
+        width="16"
+        height="16"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M4 6h16M4 10h10M4 14h16M4 18h10"
+        />
       </svg>
     ),
   },
@@ -19,8 +30,19 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     id: 'link',
     label: 'Link',
     icon: (
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5M10.172 13.828a4 4 0 015.656 0l3-3a4 4 0 10-5.656-5.656l-1.5 1.5" />
+      <svg
+        width="16"
+        height="16"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M13.828 10.172a4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5M10.172 13.828a4 4 0 015.656 0l3-3a4 4 0 10-5.656-5.656l-1.5 1.5"
+        />
       </svg>
     ),
   },
@@ -28,8 +50,19 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     id: 'document',
     label: 'Document',
     icon: (
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6M5 8h14M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
+      <svg
+        width="16"
+        height="16"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M9 12h6m-6 4h6M5 8h14M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"
+        />
       </svg>
     ),
   },
@@ -69,7 +102,11 @@ const MainArea = () => {
       setSuccess('Memory saved from text!');
       (e.target as HTMLFormElement).reset();
     } catch (err) {
-      setError(err instanceof AxiosError ? (err.response?.data?.message ?? 'Failed to save text.') : 'Unexpected error.');
+      setError(
+        err instanceof AxiosError
+          ? (err.response?.data?.message ?? 'Failed to save text.')
+          : 'Unexpected error.',
+      );
     } finally {
       setLoading(false);
     }
@@ -87,7 +124,11 @@ const MainArea = () => {
       setSuccess('Memory saved from link!');
       (e.target as HTMLFormElement).reset();
     } catch (err) {
-      setError(err instanceof AxiosError ? (err.response?.data?.message ?? 'Failed to process link.') : 'Unexpected error.');
+      setError(
+        err instanceof AxiosError
+          ? (err.response?.data?.message ?? 'Failed to process link.')
+          : 'Unexpected error.',
+      );
     } finally {
       setLoading(false);
     }
@@ -111,7 +152,11 @@ const MainArea = () => {
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
-      setError(err instanceof AxiosError ? (err.response?.data?.message ?? 'Failed to upload document.') : 'Unexpected error.');
+      setError(
+        err instanceof AxiosError
+          ? (err.response?.data?.message ?? 'Failed to upload document.')
+          : 'Unexpected error.',
+      );
     } finally {
       setLoading(false);
     }
@@ -125,27 +170,35 @@ const MainArea = () => {
   return (
     <div className="flex-1 flex flex-col items-center justify-center w-full h-full px-4 py-8">
       <div className="w-full max-w-2xl flex flex-col gap-6">
-
         {/* Header */}
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">Add to Memory</h1>
-          <p className="text-sm text-slate-400">Save text, links, or documents — NeuraMemoryAI will extract and store the key insights.</p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">
+            Add to Memory
+          </h1>
+          <p className="text-sm text-slate-400">
+            Save text, links, or documents — NeuraMemoryAI will extract and
+            store the key insights.
+          </p>
         </div>
 
         {/* Card */}
         <div className="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-xl overflow-hidden">
-
           {/* Tab bar */}
           <div className="flex border-b border-neutral-800">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => { setActiveTab(tab.id); resetFeedback(); setSelectedFile(null); }}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  resetFeedback();
+                  setSelectedFile(null);
+                }}
                 className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-colors duration-150 focus:outline-none cursor-pointer
-                  ${activeTab === tab.id
-                    ? 'text-sky-400 border-b-2 border-sky-400 bg-neutral-800/50'
-                    : 'text-slate-500 hover:text-slate-300 hover:bg-neutral-800/30'
+                  ${
+                    activeTab === tab.id
+                      ? 'text-sky-400 border-b-2 border-sky-400 bg-neutral-800/50'
+                      : 'text-slate-500 hover:text-slate-300 hover:bg-neutral-800/30'
                   }`}
               >
                 {tab.icon}
@@ -156,12 +209,13 @@ const MainArea = () => {
 
           {/* Panel body */}
           <div className="p-6">
-
             {/* ── TEXT TAB ── */}
             {activeTab === 'text' && (
               <form onSubmit={handleTextSubmit} className="flex flex-col gap-4">
                 <label className="flex flex-col gap-2">
-                  <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">Paste or type your text</span>
+                  <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">
+                    Paste or type your text
+                  </span>
                   <textarea
                     name="text"
                     rows={7}
@@ -178,10 +232,24 @@ const MainArea = () => {
             {activeTab === 'link' && (
               <form onSubmit={handleLinkSubmit} className="flex flex-col gap-4">
                 <label className="flex flex-col gap-2">
-                  <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">Enter a URL</span>
+                  <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">
+                    Enter a URL
+                  </span>
                   <div className="flex items-center gap-2 bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-sky-500 transition">
-                    <svg width="16" height="16" className="text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5M10.172 13.828a4 4 0 015.656 0l3-3a4 4 0 10-5.656-5.656l-1.5 1.5" />
+                    <svg
+                      width="16"
+                      height="16"
+                      className="text-slate-500 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M13.828 10.172a4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5M10.172 13.828a4 4 0 015.656 0l3-3a4 4 0 10-5.656-5.656l-1.5 1.5"
+                      />
                     </svg>
                     <input
                       name="url"
@@ -191,7 +259,9 @@ const MainArea = () => {
                       className="flex-1 bg-transparent text-sm text-white placeholder:text-neutral-500 outline-none"
                     />
                   </div>
-                  <p className="text-xs text-slate-500">NeuraMemoryAI will fetch and extract insights from the page.</p>
+                  <p className="text-xs text-slate-500">
+                    NeuraMemoryAI will fetch and extract insights from the page.
+                  </p>
                 </label>
                 <SubmitButton loading={loading} label="Fetch & Save" />
               </form>
@@ -199,12 +269,20 @@ const MainArea = () => {
 
             {/* ── DOCUMENT TAB ── */}
             {activeTab === 'document' && (
-              <form onSubmit={handleDocumentSubmit} className="flex flex-col gap-4">
-                <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">Upload a document</span>
+              <form
+                onSubmit={handleDocumentSubmit}
+                className="flex flex-col gap-4"
+              >
+                <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">
+                  Upload a document
+                </span>
 
                 {/* Drop zone */}
                 <div
-                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -216,14 +294,30 @@ const MainArea = () => {
                   className={`relative flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl py-10 cursor-pointer transition
                     ${dragOver ? 'border-sky-400 bg-sky-950/30' : 'border-neutral-700 hover:border-neutral-500 bg-neutral-800/40'}`}
                 >
-                  <svg width="36" height="36" className={`transition ${dragOver ? 'text-sky-400' : 'text-neutral-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  <svg
+                    width="36"
+                    height="36"
+                    className={`transition ${dragOver ? 'text-sky-400' : 'text-neutral-500'}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
                   </svg>
                   <div className="text-center">
                     <p className="text-sm font-medium text-slate-300">
-                      {selectedFile ? selectedFile.name : 'Drop file here or click to browse'}
+                      {selectedFile
+                        ? selectedFile.name
+                        : 'Drop file here or click to browse'}
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">PDF, DOCX, TXT, MD — max 10 MB</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      PDF, DOCX, TXT, MD — max 10 MB
+                    </p>
                   </div>
                   <input
                     ref={fileInputRef}
@@ -237,15 +331,32 @@ const MainArea = () => {
                 {/* Selected file badge */}
                 {selectedFile && (
                   <div className="flex items-center justify-between bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2">
-                    <span className="text-xs text-slate-300 truncate">{selectedFile.name}</span>
+                    <span className="text-xs text-slate-300 truncate">
+                      {selectedFile.name}
+                    </span>
                     <button
                       type="button"
-                      onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                      onClick={() => {
+                        setSelectedFile(null);
+                        if (fileInputRef.current)
+                          fileInputRef.current.value = '';
+                      }}
                       className="text-slate-500 hover:text-red-400 transition ml-3 shrink-0"
                       aria-label="Remove file"
                     >
-                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        width="14"
+                        height="14"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -258,13 +369,36 @@ const MainArea = () => {
             {/* Feedback */}
             {error && (
               <div className="flex items-center gap-2 mt-4 px-4 py-3 rounded-xl bg-red-950/50 border border-red-800 text-red-400 text-sm">
-                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 8v4m0 4h.01" /></svg>
+                <svg
+                  width="15"
+                  height="15"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path strokeLinecap="round" d="M12 8v4m0 4h.01" />
+                </svg>
                 {error}
               </div>
             )}
             {success && (
               <div className="flex items-center gap-2 mt-4 px-4 py-3 rounded-xl bg-emerald-950/50 border border-emerald-800 text-emerald-400 text-sm">
-                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                <svg
+                  width="15"
+                  height="15"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
                 {success}
               </div>
             )}
@@ -291,13 +425,32 @@ function SubmitButton({ loading, label }: { loading: boolean; label: string }) {
     >
       {loading ? (
         <>
-          <svg className="animate-spin" width="16" height="16" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          <svg
+            className="animate-spin"
+            width="16"
+            height="16"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            />
           </svg>
           Processing…
         </>
-      ) : label}
+      ) : (
+        label
+      )}
     </button>
   );
 }

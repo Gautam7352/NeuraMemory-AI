@@ -36,13 +36,22 @@ const Login = () => {
     <main className="flex flex-col items-center justify-center min-h-screen bg-black px-4 py-12">
       <div className="w-full max-w-xl bg-neutral-900 rounded-3xl shadow-2xl border border-gray-800 p-10 flex flex-col gap-8 animate-fade-in">
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-3xl font-extrabold text-white mb-1">Sign in to NeuraMemoryAI</h1>
-          <p className="text-gray-400 text-base">Welcome back! Please enter your details.</p>
+          <h1 className="text-3xl font-extrabold text-white mb-1">
+            Sign in to NeuraMemoryAI
+          </h1>
+          <p className="text-gray-400 text-base">
+            Welcome back! Please enter your details.
+          </p>
         </div>
 
         <form className="flex flex-col gap-6" onSubmit={handleLogin}>
           <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="text-gray-300 text-sm font-medium">Email</label>
+            <label
+              htmlFor="email"
+              className="text-gray-300 text-sm font-medium"
+            >
+              Email
+            </label>
             <input
               id="email"
               name="email"
@@ -54,7 +63,12 @@ const Login = () => {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="password" className="text-gray-300 text-sm font-medium">Password</label>
+            <label
+              htmlFor="password"
+              className="text-gray-300 text-sm font-medium"
+            >
+              Password
+            </label>
             <input
               id="password"
               name="password"

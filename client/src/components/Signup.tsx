@@ -30,7 +30,8 @@ const Signup = () => {
     } catch (err) {
       const message =
         err instanceof AxiosError
-          ? (err.response?.data?.message ?? 'Registration failed. Please try again.')
+          ? (err.response?.data?.message ??
+            'Registration failed. Please try again.')
           : 'An unexpected error occurred.';
       setError(message);
     } finally {
@@ -43,13 +44,22 @@ const Signup = () => {
       <div className="absolute inset-0 bg-linear-to-br from-neutral-900/80 to-neutral-800/60 pointer-events-none z-0" />
       <div className="relative w-full max-w-xl bg-neutral-900 rounded-3xl shadow-2xl border border-gray-800 p-10 flex flex-col gap-8 animate-fade-in z-10">
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-xl font-extrabold text-white mb-1">Create account</h1>
-          <p className="text-gray-400 text-sm">Sign up to get started with NeuraMemoryAI.</p>
+          <h1 className="text-xl font-extrabold text-white mb-1">
+            Create account
+          </h1>
+          <p className="text-gray-400 text-sm">
+            Sign up to get started with NeuraMemoryAI.
+          </p>
         </div>
 
         <form className="flex flex-col gap-6" onSubmit={handleSignup}>
           <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="text-gray-300 text-xs font-medium">Email</label>
+            <label
+              htmlFor="email"
+              className="text-gray-300 text-xs font-medium"
+            >
+              Email
+            </label>
             <input
               id="email"
               name="email"
@@ -61,7 +71,12 @@ const Signup = () => {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="password" className="text-gray-300 text-xs font-medium">Password</label>
+            <label
+              htmlFor="password"
+              className="text-gray-300 text-xs font-medium"
+            >
+              Password
+            </label>
             <input
               id="password"
               name="password"
@@ -69,11 +84,18 @@ const Signup = () => {
               className="bg-neutral-800 border border-gray-700 px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition rounded-lg"
               required
             />
-            <p className="text-gray-500 text-xs">Min 8 characters, at least one uppercase letter and one number.</p>
+            <p className="text-gray-500 text-xs">
+              Min 8 characters, at least one uppercase letter and one number.
+            </p>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="confirmPassword" className="text-gray-300 text-xs font-medium">Confirm Password</label>
+            <label
+              htmlFor="confirmPassword"
+              className="text-gray-300 text-xs font-medium"
+            >
+              Confirm Password
+            </label>
             <input
               id="confirmPassword"
               name="confirmPassword"
@@ -104,7 +126,7 @@ const Signup = () => {
           </button>
         </div>
       </div>
-    </main >
+    </main>
   );
 };
 

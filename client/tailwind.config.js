@@ -1,8 +1,5 @@
 module.exports = {
-  content: [
-    './src/**/*.{js,jsx,ts,tsx}',
-    './index.html',
-  ],
+  content: ['./src/**/*.{js,jsx,ts,tsx}', './index.html'],
   theme: {
     extend: {
       colors: {
@@ -14,7 +11,7 @@ module.exports = {
         'supermemory-accent': '#1a237e',
       },
       fontFamily: {
-        'sans': ['Inter', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
       },
     },
   },

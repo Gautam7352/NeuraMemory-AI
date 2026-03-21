@@ -9,10 +9,13 @@ import Signup from './components/Signup';
 import { api } from './lib/api';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<'loading' | 'auth' | 'unauth'>('loading');
+  const [status, setStatus] = useState<'loading' | 'auth' | 'unauth'>(
+    'loading',
+  );
 
   useEffect(() => {
-    api.get('/api/v1/me')
+    api
+      .get('/api/v1/me')
       .then(() => setStatus('auth'))
       .catch(() => setStatus('unauth'));
   }, []);
@@ -38,7 +41,14 @@ function AppContent() {
           </ProtectedRoute>
         }
       />
-      <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }

@@ -1,11 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { api } from '../lib/api';
+import type { UserProfile } from '../types/index';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    api.get<{ success: boolean; data: UserProfile }>('/api/v1/profile')
+      .then((res) => setProfile(res.data.data))
+      .catch(() => {/* silently suppress errors */});
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -100,8 +109,18 @@ const Navbar = () => {
             <div
               role="menu"
               aria-label="Profile menu"
-              className="absolute right-0 mt-2 w-48 bg-neutral-900 border border-neutral-700 rounded-xl shadow-xl py-1 z-50 animate-fade-in"
+              className="absolute right-0 mt-2 w-56 bg-neutral-900 border border-neutral-700 rounded-xl shadow-xl py-1 z-50 animate-fade-in"
             >
+              {/* Profile info */}
+              {profile && (
+                <div className="px-4 py-2.5 border-b border-neutral-800">
+                  <p className="text-sm font-medium text-slate-200 truncate">{profile.email}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Member since: {new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              )}
+
               <button
                 type="button"
                 role="menuitem"

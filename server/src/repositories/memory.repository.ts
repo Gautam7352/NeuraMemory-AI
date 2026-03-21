@@ -239,3 +239,60 @@ export async function deleteMemoryById(pointId: string): Promise<void> {
     points: [pointId],
   });
 }
+
+// ---------------------------------------------------------------------------
+// Stats
+// ---------------------------------------------------------------------------
+
+export interface MemoryStatsResult {
+  total: number;
+  byKind: { semantic: number; bubble: number };
+  bySource: { text: number; link: number; document: number };
+}
+
+export async function getMemoryStats(userId: string): Promise<MemoryStatsResult> {
+  await ensureCollection();
+  const client = getQdrantClient();
+
+  const userFilter = { must: [{ key: 'userId', match: { value: userId } }] };
+
+  const [total, semantic, bubble, textSrc, linkSrc, docSrc] = await Promise.all([
+    client.count(COLLECTION_NAME, { filter: userFilter }),
+    client.count(COLLECTION_NAME, { filter: { must: [...userFilter.must, { key: 'kind', match: { value: 'semantic' } }] } }),
+    client.count(COLLECTION_NAME, { filter: { must: [...userFilter.must, { key: 'kind', match: { value: 'bubble' } }] } }),
+    client.count(COLLECTION_NAME, { filter: { must: [...userFilter.must, { key: 'source', match: { value: 'text' } }] } }),
+    client.count(COLLECTION_NAME, { filter: { must: [...userFilter.must, { key: 'source', match: { value: 'link' } }] } }),
+    client.count(COLLECTION_NAME, { filter: { must: [...userFilter.must, { key: 'source', match: { value: 'document' } }] } }),
+  ]);
+
+  return {
+    total: total.count,
+    byKind: { semantic: semantic.count, bubble: bubble.count },
+    bySource: { text: textSrc.count, link: linkSrc.count, document: docSrc.count },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Update
+// ---------------------------------------------------------------------------
+
+export async function updateMemoryById(
+  id: string,
+  text: string,
+  vector: number[],
+  existingPayload: StoredMemoryPayload,
+): Promise<void> {
+  await ensureCollection();
+  const client = getQdrantClient();
+
+  await client.upsert(COLLECTION_NAME, {
+    wait: true,
+    points: [
+      {
+        id,
+        vector,
+        payload: { ...existingPayload, text } as unknown as Record<string, unknown>,
+      },
+    ],
+  });
+}

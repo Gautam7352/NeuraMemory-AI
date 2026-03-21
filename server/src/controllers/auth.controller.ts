@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { loginService, registerService } from '../services/auth.service.js';
+import { findUserById } from '../repositories/user.repository.js';
 import { AppError } from '../utils/AppError.js';
 
 const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -112,4 +113,25 @@ export function logoutController(_req: Request, res: Response): void {
 
 export function meController(req: Request, res: Response): void {
   res.status(200).json({ success: true, user: req.user });
+}
+
+export async function profileController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) throw new AppError(401, 'Authentication required.');
+
+    const user = await findUserById(userId);
+    if (!user) throw new AppError(404, 'User not found.');
+
+    res.status(200).json({
+      success: true,
+      data: { email: user.email, createdAt: user.createdAt },
+    });
+  } catch (err) {
+    next(err);
+  }
 }

@@ -20,6 +20,9 @@ import {
   getMemories,
   deleteMemories,
   deleteMemoryById,
+  searchMemoriesController,
+  getStats,
+  updateMemory,
 } from '../controllers/memories/memorie.controller.js';
 import { documentUpload } from '../middleware/upload.js';
 import { requireAuth } from '../middleware/auth/requireAuth.js';
@@ -30,29 +33,24 @@ const router = Router();
 router.use(requireAuth);
 
 // ---------------------------------------------------------------------------
+// Search & Stats — must be before /:id to avoid Express treating them as IDs
+// ---------------------------------------------------------------------------
+router.get('/search', searchMemoriesController);
+router.get('/stats', getStats);
+
+// ---------------------------------------------------------------------------
 // Create memories
 // ---------------------------------------------------------------------------
-
-/** Plain text → extract → embed → store */
 router.post('/text', createFromText);
-
-/** URL / link → fetch content → extract → embed → store */
 router.post('/link', createFromLink);
-
-/** Document upload → parse → extract → embed → store */
 router.post('/document', documentUpload.single('file'), createFromDocument);
 
 // ---------------------------------------------------------------------------
-// Read / Delete
+// Read / Delete / Update
 // ---------------------------------------------------------------------------
-
-/** List memories for the authenticated user */
 router.get('/', getMemories);
-
-/** Delete all memories for the authenticated user */
 router.delete('/', deleteMemories);
-
-/** Delete a specific memory by ID */
+router.patch('/:id', updateMemory);
 router.delete('/:id', deleteMemoryById);
 
 export default router;

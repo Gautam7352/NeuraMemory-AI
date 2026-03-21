@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import authRouter from './routes/auth.route.js';
 import memoryRouter from './routes/memorie.route.js';
+import chatRouter from './routes/chat.route.js';
 import swaggerSpec from './config/swagger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { ensureUserIndexes } from './repositories/user.repository.js';
@@ -49,6 +50,7 @@ if (env.NODE_ENV !== 'production') {
 // ---------------------------------------------------------------------------
 app.use('/api/v1', authRouter);
 app.use('/api/v1/memories', memoryRouter);
+app.use('/api/v1/chat', chatRouter);
 
 // ---------------------------------------------------------------------------
 // Error handler — must be registered after all routes

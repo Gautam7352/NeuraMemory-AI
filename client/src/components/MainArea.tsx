@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { AxiosError } from 'axios';
 import { api } from '../lib/api';
+import { useToast } from '../context/ToastContext';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type Tab = 'text' | 'link' | 'document';
@@ -37,23 +38,14 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 const ACCEPTED_TYPES = '.pdf,.docx,.txt,.md';
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-// No manual auth headers needed; axios will attach the neura_token cookie automatically.
-
 // ── Component ──────────────────────────────────────────────────────────────
 const MainArea = () => {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('text');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const resetFeedback = () => {
-    setError('');
-    setSuccess('');
-  };
 
   // ── Submit handlers ──────────────────────────────────────────────────────
 
@@ -62,14 +54,13 @@ const MainArea = () => {
     const text = (new FormData(e.currentTarget).get('text') as string).trim();
     if (!text) return;
 
-    resetFeedback();
     setLoading(true);
     try {
       await api.post('/api/v1/memories/text', { text });
-      setSuccess('Memory saved from text!');
+      showToast('success', 'Memory saved from text!');
       (e.target as HTMLFormElement).reset();
     } catch (err) {
-      setError(err instanceof AxiosError ? (err.response?.data?.message ?? 'Failed to save text.') : 'Unexpected error.');
+      showToast('error', err instanceof AxiosError ? (err.response?.data?.message ?? 'Failed to save text.') : 'Unexpected error.');
     } finally {
       setLoading(false);
     }
@@ -80,14 +71,13 @@ const MainArea = () => {
     const url = (new FormData(e.currentTarget).get('url') as string).trim();
     if (!url) return;
 
-    resetFeedback();
     setLoading(true);
     try {
       await api.post('/api/v1/memories/link', { url });
-      setSuccess('Memory saved from link!');
+      showToast('success', 'Memory saved from link!');
       (e.target as HTMLFormElement).reset();
     } catch (err) {
-      setError(err instanceof AxiosError ? (err.response?.data?.message ?? 'Failed to process link.') : 'Unexpected error.');
+      showToast('error', err instanceof AxiosError ? (err.response?.data?.message ?? 'Failed to process link.') : 'Unexpected error.');
     } finally {
       setLoading(false);
     }
@@ -96,22 +86,21 @@ const MainArea = () => {
   const handleDocumentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedFile) {
-      setError('Please select a file to upload.');
+      showToast('error', 'Please select a file to upload.');
       return;
     }
 
-    resetFeedback();
     setLoading(true);
     const form = new FormData();
     form.append('file', selectedFile);
 
     try {
       await api.post('/api/v1/memories/document', form);
-      setSuccess(`Memory saved from "${selectedFile.name}"!`);
+      showToast('success', `Memory saved from "${selectedFile.name}"!`);
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
-      setError(err instanceof AxiosError ? (err.response?.data?.message ?? 'Failed to upload document.') : 'Unexpected error.');
+      showToast('error', err instanceof AxiosError ? (err.response?.data?.message ?? 'Failed to upload document.') : 'Unexpected error.');
     } finally {
       setLoading(false);
     }
@@ -119,7 +108,6 @@ const MainArea = () => {
 
   const onFileChange = (file: File | null) => {
     setSelectedFile(file);
-    resetFeedback();
   };
 
   return (
@@ -141,7 +129,7 @@ const MainArea = () => {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => { setActiveTab(tab.id); resetFeedback(); setSelectedFile(null); }}
+                onClick={() => { setActiveTab(tab.id); setSelectedFile(null); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-colors duration-150 focus:outline-none cursor-pointer
                   ${activeTab === tab.id
                     ? 'text-sky-400 border-b-2 border-sky-400 bg-neutral-800/50'
@@ -253,20 +241,6 @@ const MainArea = () => {
 
                 <SubmitButton loading={loading} label="Upload & Save" />
               </form>
-            )}
-
-            {/* Feedback */}
-            {error && (
-              <div className="flex items-center gap-2 mt-4 px-4 py-3 rounded-xl bg-red-950/50 border border-red-800 text-red-400 text-sm">
-                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 8v4m0 4h.01" /></svg>
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="flex items-center gap-2 mt-4 px-4 py-3 rounded-xl bg-emerald-950/50 border border-emerald-800 text-emerald-400 text-sm">
-                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                {success}
-              </div>
             )}
           </div>
         </div>

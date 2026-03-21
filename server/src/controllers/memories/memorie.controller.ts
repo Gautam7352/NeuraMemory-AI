@@ -13,8 +13,20 @@ import {
   clearUserMemories,
   deleteUserMemoryById,
 } from '../../services/memory.service.js';
+import {
+  getMemoryStats,
+  getMemoryPointById,
+  updateMemoryById,
+} from '../../repositories/memory.repository.js';
+import { generateEmbedding } from '../../utils/embeddings.js';
+import { searchMemories } from '../../repositories/memory.repository.js';
 import { AppError } from '../../utils/AppError.js';
 import type { MemorySource } from '../../types/memory.types.js';
+
+export function clampSearchLimit(n: number): number {
+  if (isNaN(n) || n < 1) return 10;
+  return Math.min(n, 50);
+}
 
 function getAuthUserId(req: Request): string {
   const user = req.user;
@@ -201,6 +213,73 @@ export async function deleteMemoryById(
     }
     await deleteUserMemoryById(userId, pointId);
     res.status(200).json({ success: true, message: 'Memory deleted.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function searchMemoriesController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = getAuthUserId(req);
+    const q = typeof req.query['q'] === 'string' ? req.query['q'].trim() : '';
+    if (!q) throw new AppError(400, 'Query parameter "q" is required and must not be empty.');
+
+    const limitRaw = typeof req.query['limit'] === 'string' ? Number(req.query['limit']) : NaN;
+    const limit = clampSearchLimit(limitRaw);
+
+    const vector = await generateEmbedding(q);
+    const results = await searchMemories(vector, userId, limit);
+
+    res.status(200).json({
+      success: true,
+      message: `Found ${results.length} result(s).`,
+      data: results,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getStats(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = getAuthUserId(req);
+    const stats = await getMemoryStats(userId);
+    res.status(200).json({ success: true, data: stats });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateMemory(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = getAuthUserId(req);
+    const pointId = Array.isArray(req.params['id']) ? req.params['id'][0] : req.params['id'];
+    if (!pointId) throw new AppError(400, 'Memory ID is required.');
+
+    const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+    if (!text) throw new AppError(400, 'Text is required.');
+    if (text.length > 100_000) throw new AppError(400, 'Text must not exceed 100,000 characters.');
+
+    const existing = await getMemoryPointById(pointId);
+    if (!existing) throw new AppError(404, 'Memory not found.');
+    if (existing.payload.userId !== userId) throw new AppError(403, 'Forbidden.');
+
+    const vector = await generateEmbedding(text);
+    await updateMemoryById(pointId, text, vector, existing.payload);
+
+    res.status(200).json({ success: true, message: 'Memory updated.' });
   } catch (err) {
     next(err);
   }

@@ -4,6 +4,7 @@ import {
   logoutController,
   meController,
   registerController,
+  profileController,
 } from '../controllers/auth.controller.js';
 import { requireAuth } from '../middleware/auth/requireAuth.js';
 import { loginRateLimiter, registerRateLimiter } from '../middleware/rateLimit.js';
@@ -14,5 +15,6 @@ router.post('/login', loginRateLimiter, loginController);
 router.post('/register', registerRateLimiter, registerController);
 router.post('/logout', requireAuth, logoutController);
 router.get('/me', requireAuth, meController);
+router.get('/profile', requireAuth, profileController);
 
 export default router;

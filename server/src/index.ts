@@ -8,6 +8,7 @@ import swaggerSpec from './config/swagger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { ensureUserIndexes } from './repositories/user.repository.js';
 import { getMongoClient } from './lib/mongodb.js';
+import mcpRouter from './routes/mcp.route.js';
 
 const app = express();
 app.use(express.json());
@@ -16,13 +17,13 @@ app.use(express.json());
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:3000",
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:3000',
       // add production url
     ],
     credentials: true,
-  })
+  }),
 );
 
 // ---------------------------------------------------------------------------
@@ -38,6 +39,7 @@ app.get('/api-docs/spec.json', (_req, res) => {
 // ---------------------------------------------------------------------------
 app.use('/api/v1', authRouter);
 app.use('/api/v1/memories', memoryRouter);
+app.use('/api/v1/mcp', mcpRouter);
 
 // ---------------------------------------------------------------------------
 // Error handler — must be registered after all routes

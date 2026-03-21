@@ -17,13 +17,19 @@ import { AppError } from './AppError.js';
  */
 export async function extractTextFromUrl(url: string): Promise<string> {
   try {
-    const firecrawl = new FirecrawlApp({ apiKey: process.env['FIRECRAWL_API_KEY'] || '' });
+    const firecrawl = new FirecrawlApp({
+      apiKey: process.env['FIRECRAWL_API_KEY'] || '',
+    });
 
     // Attempt to scrape the URL, asking Firecrawl for markdown format
-    const response = await firecrawl.scrape(url, {
+    const response = (await firecrawl.scrape(url, {
       formats: ['markdown'],
-    }) as any;
-
+    })) as {
+      success: boolean;
+      error?: string;
+      markdown?: string;
+      data?: { markdown?: string };
+    };
 
     if (response.success === false) {
       throw new AppError(
@@ -34,7 +40,8 @@ export async function extractTextFromUrl(url: string): Promise<string> {
 
     // `response.markdown` is typically where the markdown format appears.
     // In some older versions, it might be nested under `data`.
-    const markdown = response.markdown || (response.data && response.data.markdown) || '';
+    const markdown =
+      response.markdown || (response.data && response.data.markdown) || '';
 
     if (!markdown) {
       return '';
@@ -89,8 +96,6 @@ export async function extractTextFromDocument(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-
 
 /**
  * Very lightweight PDF text extraction.
@@ -190,9 +195,7 @@ function extractTextFromDocxBuffer(buffer: Buffer): string {
   // Find the end of the XML: look for the next PK signature or end of buffer
   const nextPk = asString.indexOf('PK', xmlStart + 10);
   const xmlContent =
-    nextPk === -1
-      ? asString.slice(xmlStart)
-      : asString.slice(xmlStart, nextPk);
+    nextPk === -1 ? asString.slice(xmlStart) : asString.slice(xmlStart, nextPk);
 
   // Strip XML tags, decode entities, collapse whitespace
   const text = xmlContent

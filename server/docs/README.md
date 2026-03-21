@@ -352,3 +352,28 @@ Please follow the coding standards outlined in [BEST_PRACTICES.md](BEST_PRACTICE
 ## License
 
 See the root `LICENSE` file for details.
+
+Paste in the claude desktop:
+
+```
+{
+  "mcpServers": {
+    "memories": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "here-https-server-url/api/v1/mcp?apiKey={apikey}"
+      ]
+    }
+  },
+  "preferences": {
+    "coworkScheduledTasksEnabled": false,
+    "ccdScheduledTasksEnabled": false,
+    "sidebarMode": "chat",
+    "coworkWebSearchEnabled": true
+  }
+}
+
+
+```

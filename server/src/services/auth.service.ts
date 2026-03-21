@@ -1,9 +1,11 @@
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
+import crypto from 'crypto';
 import { env } from '../config/env.js';
 import {
   createUser,
   findUserByEmail,
+  updateUserApiKey,
 } from '../repositories/user.repository.js';
 import { AuthPayload, AuthResponse } from '../types/auth.types.js';
 import { AppError } from '../utils/AppError.js';
@@ -157,4 +159,16 @@ export async function loginService(
     logAuthError('login', email, err);
     throw err;
   }
+}
+
+/**
+ * Generates a new API Key for the user.
+ */
+export async function generateApiService(userId: string): Promise<{ apiKey: string }> {
+  // Generate a random 32-byte hex string and prefix it with nm_ (NeuraMemory)
+  const apiKey = `nm_${crypto.randomBytes(32).toString('hex')}`;
+  
+  await updateUserApiKey(userId, apiKey);
+
+  return { apiKey };
 }

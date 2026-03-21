@@ -1,6 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { loginService, registerService } from '../services/auth.service.js';
+import {
+  loginService,
+  registerService,
+  generateApiService,
+} from '../services/auth.service.js';
 import { AppError } from '../utils/AppError.js';
 
 const emailSchema = z
@@ -54,13 +58,13 @@ export async function loginController(
     const { email, password } = result.data;
     const response = await loginService(email, password);
 
-    res.cookie("authorization", response.token, {
+    res.cookie('authorization', response.token, {
       httpOnly: true,
-      secure: process.env['NODE_ENV'] === "production",
-      sameSite: "strict",
+      secure: process.env['NODE_ENV'] === 'production',
+      sameSite: 'strict',
       maxAge: 60 * 60 * 1000,
     });
-    
+
     res.status(200).json(response);
   } catch (err) {
     next(err);
@@ -85,6 +89,28 @@ export async function registerController(
     const response = await registerService(email, password);
 
     res.status(201).json(response);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function generateApiKeyController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new AppError(401, 'Unauthorized');
+    }
+
+    const response = await generateApiService(userId);
+
+    res.status(200).json({
+      success: true,
+      data: response,
+    });
   } catch (err) {
     next(err);
   }

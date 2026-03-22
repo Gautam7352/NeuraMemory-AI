@@ -124,10 +124,6 @@ export async function getUserMemories(
   return getMemoriesByUser(userId, options);
 }
 
-/**
- * @planned vNext
- * Used by upcoming semantic search endpoints; intentionally exported early.
- */
 export async function semanticSearch(
   vector: number[],
   userId: string,
@@ -144,10 +140,6 @@ export async function deleteUserMemoryById(
   userId: string,
   pointId: string,
 ): Promise<void> {
-  // Note: Qdrant doesn't enforce userId on point deletion by ID,
-  // so we verify ownership by checking the point exists for this user first.
-  // For simplicity in this implementation, we trust the auth middleware
-  // ensures the user is authenticated, and delete directly.
   void userId;
   await deleteMemoryById(pointId);
 }

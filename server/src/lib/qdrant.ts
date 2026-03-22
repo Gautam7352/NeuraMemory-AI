@@ -6,9 +6,6 @@ const apiKey = env.QDRANT_API_KEY;
 
 let qdrant: QdrantClient | null = null;
 
-/**
- * Singleton client for Qdrant vector database interactions.
- */
 export function getQdrantClient(): QdrantClient {
   if (!qdrant) {
     qdrant = new QdrantClient({
@@ -20,9 +17,6 @@ export function getQdrantClient(): QdrantClient {
   return qdrant;
 }
 
-/**
- * Clears the Qdrant singleton reference (allows GC; HTTP connections close on process exit).
- */
 export function closeQdrantClient(): void {
   qdrant = null;
 }

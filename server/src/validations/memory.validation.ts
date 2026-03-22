@@ -32,7 +32,6 @@ export const linkSchema = z.object({
     ),
 });
 
-/** Allowed MIME types for document uploads */
 export const ALLOWED_DOCUMENT_MIMES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
@@ -40,5 +39,4 @@ export const ALLOWED_DOCUMENT_MIMES = [
   'text/markdown',
 ] as const;
 
-/** Max file size in bytes (10 MB) */
 export const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;

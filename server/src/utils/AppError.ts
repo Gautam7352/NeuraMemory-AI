@@ -8,7 +8,6 @@ export class AppError extends Error {
     this.statusCode = statusCode;
     this.isOperational = isOperational;
 
-    // Maintains proper stack trace in V8
     Error.captureStackTrace(this, this.constructor);
   }
 }

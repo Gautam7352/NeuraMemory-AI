@@ -8,7 +8,6 @@ const SUGGESTIONS = [
   'Draft an email based on my docs',
 ];
 
-// ── Typing indicator ────────────────────────────────────────────────────────
 function TypingDots() {
   return (
     <span className="inline-flex items-center gap-1 px-1">
@@ -23,7 +22,6 @@ function TypingDots() {
   );
 }
 
-// ── Message bubble ──────────────────────────────────────────────────────────
 function MessageBubble({ role, content, isStreaming }: { role: 'user' | 'assistant'; content: string; isStreaming?: boolean }) {
   if (role === 'user') {
     return (
@@ -53,7 +51,6 @@ function MessageBubble({ role, content, isStreaming }: { role: 'user' | 'assista
   );
 }
 
-// ── Main component ──────────────────────────────────────────────────────────
 function RightSidebar() {
   const isEnabled = import.meta.env.VITE_CHAT_ENABLED === 'true';
   const { messages, streaming, sendMessage } = useChat();
@@ -61,7 +58,6 @@ function RightSidebar() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -71,7 +67,6 @@ function RightSidebar() {
     if (!text || streaming || !isEnabled) return;
     sendMessage(text);
     setInput('');
-    // Reset textarea height
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
   };
 
@@ -89,7 +84,6 @@ function RightSidebar() {
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
-    // Auto-resize
     e.target.style.height = 'auto';
     e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`;
   };
@@ -99,11 +93,9 @@ function RightSidebar() {
   return (
     <aside className="w-full h-full flex flex-col bg-neutral-900 border border-neutral-800 rounded-3xl shadow-2xl overflow-hidden relative">
 
-      {/* Background glows */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
-      {/* Header */}
       <div className="flex flex-col p-6 pb-2 relative z-10 shrink-0">
         <div className="flex items-center gap-3 mb-1">
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-sky-500 shadow-md">
@@ -123,10 +115,8 @@ function RightSidebar() {
         </p>
       </div>
 
-      {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4 relative z-10 scrollbar-thin scrollbar-thumb-neutral-800 scrollbar-track-transparent">
 
-        {/* Welcome state */}
         {showWelcome && (
           <>
             <MessageBubble
@@ -151,7 +141,6 @@ function RightSidebar() {
           </>
         )}
 
-        {/* Conversation messages */}
         {messages.map((msg, i) => {
           const isLastAssistant = msg.role === 'assistant' && i === messages.length - 1;
           return (
@@ -167,7 +156,6 @@ function RightSidebar() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input area */}
       <div className="p-4 bg-neutral-900/80 backdrop-blur-md border-t border-neutral-800 relative z-10 shrink-0">
         <div className="relative flex items-end gap-2 bg-neutral-800/50 border border-neutral-700 focus-within:border-sky-500 rounded-2xl px-3 py-2.5 transition-colors duration-200 shadow-inner">
 

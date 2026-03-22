@@ -1,28 +1,12 @@
-/**
- * LLM-powered memory extraction.
- *
- * Sends text to the configured OpenRouter model alongside the system prompt,
- * and parses the structured JSON response into `ExtractedMemories`.
- */
-
 import { getOpenRouterClient } from '../lib/openrouter.js';
 import systemPrompt from './systemPrompt.js';
 import { AppError } from './AppError.js';
 import type { ExtractedMemories } from '../types/memory.types.js';
 
-/** The model to use for extraction — tunable via env in the future */
 const EXTRACTION_MODEL = 'google/gemini-2.0-flash-001';
 
-/** Maximum input text length sent to the LLM (characters) */
 const MAX_INPUT_LENGTH = 80_000;
 
-/**
- * Extract semantic facts and episodic bubbles from arbitrary text.
- *
- * @param text  The raw text to extract memories from.
- * @returns     Parsed `ExtractedMemories` with `semantic` and `bubbles` arrays.
- * @throws      `AppError` if the LLM call or response parsing fails.
- */
 export async function extractMemories(
   text: string,
 ): Promise<ExtractedMemories> {
@@ -30,7 +14,6 @@ export async function extractMemories(
     return { semantic: [], bubbles: [] };
   }
 
-  // Guard against excessively large inputs
   const truncatedText =
     text.length > MAX_INPUT_LENGTH
       ? text.slice(0, MAX_INPUT_LENGTH) + '\n\n[…truncated]'
@@ -41,7 +24,7 @@ export async function extractMemories(
   try {
     const completion = await client.chat.completions.create({
       model: EXTRACTION_MODEL,
-      temperature: 0.1, // keep output deterministic
+      temperature: 0.1,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },
@@ -77,14 +60,6 @@ export async function extractMemories(
   }
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Parses and validates the raw JSON string returned by the LLM.
- * Gracefully handles malformed or unexpected shapes.
- */
 function parseExtractionResponse(raw: string): ExtractedMemories {
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -98,7 +73,6 @@ function parseExtractionResponse(raw: string): ExtractedMemories {
 
     const obj = parsed as Record<string, unknown>;
 
-    // --- semantic ---
     const semantic: string[] = [];
     if (Array.isArray(obj['semantic'])) {
       for (const item of obj['semantic']) {
@@ -108,7 +82,6 @@ function parseExtractionResponse(raw: string): ExtractedMemories {
       }
     }
 
-    // --- bubbles ---
     const bubbles: ExtractedMemories['bubbles'] = [];
     if (Array.isArray(obj['bubbles'])) {
       for (const item of obj['bubbles']) {

@@ -1,9 +1,3 @@
-/**
- * OpenAPI 3.0 specification for NeuraMemory-AI.
- *
- * Served at `/api-docs` via swagger-ui-express.
- */
-
 import type { JsonObject } from 'swagger-ui-express';
 
 const swaggerSpec: JsonObject = {
@@ -51,9 +45,6 @@ const swaggerSpec: JsonObject = {
     },
   ],
 
-  // ---------------------------------------------------------------------------
-  // Security schemes
-  // ---------------------------------------------------------------------------
   components: {
     securitySchemes: {
       BearerAuth: {
@@ -66,7 +57,6 @@ const swaggerSpec: JsonObject = {
     },
 
     schemas: {
-      // ── Shared ──────────────────────────────────────────────────────────
       ErrorResponse: {
         type: 'object',
         properties: {
@@ -76,7 +66,6 @@ const swaggerSpec: JsonObject = {
         required: ['success', 'message'],
       },
 
-      // ── Auth ────────────────────────────────────────────────────────────
       AuthCredentials: {
         type: 'object',
         properties: {
@@ -124,7 +113,6 @@ const swaggerSpec: JsonObject = {
         required: ['success', 'message', 'apiKey'],
       },
 
-      // ── Memories ────────────────────────────────────────────────────────
       Bubble: {
         type: 'object',
         properties: {
@@ -207,7 +195,6 @@ const swaggerSpec: JsonObject = {
         required: ['success', 'message'],
       },
 
-      // ── New schemas ──────────────────────────────────────────────────────
       MemoryItem: {
         allOf: [{ $ref: '#/components/schemas/StoredMemory' }],
         properties: {
@@ -326,11 +313,7 @@ const swaggerSpec: JsonObject = {
     },
   },
 
-  // ---------------------------------------------------------------------------
-  // Paths
-  // ---------------------------------------------------------------------------
   paths: {
-    // ── Auth ──────────────────────────────────────────────────────────────
     '/api/v1/register': {
       post: {
         tags: ['Auth'],
@@ -448,7 +431,6 @@ const swaggerSpec: JsonObject = {
       },
     },
 
-    // ── Memories — Create ─────────────────────────────────────────────────
     '/api/v1/memories/text': {
       post: {
         tags: ['Memories'],
@@ -758,7 +740,6 @@ const swaggerSpec: JsonObject = {
       },
     },
 
-    // ── Memories — Search ─────────────────────────────────────────────────
     '/api/v1/memories/search': {
       get: {
         tags: ['Memories'],
@@ -799,7 +780,6 @@ const swaggerSpec: JsonObject = {
       },
     },
 
-    // ── Memories — Stats ──────────────────────────────────────────────────
     '/api/v1/memories/stats': {
       get: {
         tags: ['Memories'],
@@ -819,7 +799,6 @@ const swaggerSpec: JsonObject = {
       },
     },
 
-    // ── Memories — Single ─────────────────────────────────────────────────
     '/api/v1/memories/{id}': {
       patch: {
         tags: ['Memories'],
@@ -918,7 +897,6 @@ const swaggerSpec: JsonObject = {
       },
     },
 
-    // ── Auth — Profile / Logout / Me ──────────────────────────────────────
     '/api/v1/profile': {
       get: {
         tags: ['Auth'],
@@ -1006,7 +984,6 @@ const swaggerSpec: JsonObject = {
       },
     },
 
-    // ── Chat ──────────────────────────────────────────────────────────────
     '/api/v1/chat': {
       post: {
         tags: ['Chat'],
@@ -1044,40 +1021,144 @@ const swaggerSpec: JsonObject = {
       },
     },
 
-    // ── MCP ───────────────────────────────────────────────────────────────
     '/api/v1/mcp/health': {
       get: {
         tags: ['MCP'],
-        summary: 'MCP Health Check',
-        description: 'Simple unauthenticated endpoint to verify the MCP server is alive.',
+        summary: 'MCP health check',
+        description: 'Unauthenticated liveness probe for the MCP server.',
         responses: {
           '200': {
             description: 'MCP server is healthy',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', example: 'ok' },
+                    service: { type: 'string', example: 'NeuraMemory-MCP' },
+                  },
+                },
+              },
+            },
           },
         },
       },
     },
 
-    '/api/v1/mcp/sse': {
-      get: {
+    '/api/v1/mcp': {
+      post: {
         tags: ['MCP'],
-        summary: 'Establish MCP SSE Connection',
-        description: 'Endpoint to establish a Server-Sent Events stream for Model Context Protocol. A valid user API Key is strictly required.',
+        summary: 'Initialize or send MCP message',
+        description:
+          'Handles MCP Streamable HTTP transport. On the first request (no `mcp-session-id` header) a new session is created and the session ID is returned in the response header. Subsequent requests must include the `mcp-session-id` header to route to the existing session.\n\n' +
+          'Authentication is via API key supplied as `apiKey` query param, `x-api-key` header, or `Authorization: Bearer <key>` header.',
         parameters: [
+          {
+            name: 'mcp-session-id',
+            in: 'header',
+            required: false,
+            schema: { type: 'string' },
+            description: 'Session ID returned from the initial POST. Omit on first request.',
+          },
           {
             name: 'apiKey',
             in: 'query',
             required: false,
             schema: { type: 'string' },
-            description: 'User API Key. Can also be provided via the `Authorization: Bearer <key>` or `x-api-key` HTTP headers.',
+            description: 'User API key. Can also be sent via `x-api-key` or `Authorization: Bearer` headers.',
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                description: 'JSON-RPC 2.0 MCP request payload.',
+                properties: {
+                  jsonrpc: { type: 'string', example: '2.0' },
+                  id: { type: 'string', example: '1' },
+                  method: { type: 'string', example: 'tools/call' },
+                  params: { type: 'object' },
+                },
+                required: ['jsonrpc', 'method'],
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'MCP response (JSON-RPC result or SSE stream depending on method)',
+          },
+          '401': {
+            description: 'Missing or invalid API key',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+
+      get: {
+        tags: ['MCP'],
+        summary: 'Poll MCP session (SSE)',
+        description:
+          'Opens a Server-Sent Events stream for an existing MCP session. Requires a valid `mcp-session-id` header.',
+        parameters: [
+          {
+            name: 'mcp-session-id',
+            in: 'header',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Session ID obtained from the initial POST.',
           },
         ],
         responses: {
           '200': {
-            description: 'SSE stream connection established',
+            description: 'SSE stream for the MCP session',
+            content: {
+              'text/event-stream': {
+                schema: { type: 'string' },
+              },
+            },
           },
-          '401': {
-            description: 'Missing or invalid API key',
+          '400': {
+            description: 'Invalid or missing session ID',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+
+      delete: {
+        tags: ['MCP'],
+        summary: 'Terminate MCP session',
+        description: 'Closes and removes an existing MCP session. Requires a valid `mcp-session-id` header.',
+        parameters: [
+          {
+            name: 'mcp-session-id',
+            in: 'header',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Session ID to terminate.',
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Session terminated successfully',
+          },
+          '400': {
+            description: 'Invalid or missing session ID',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
           },
         },
       },

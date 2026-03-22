@@ -1,12 +1,3 @@
-/**
- * Memory repository — all Qdrant vector database operations for memories.
- *
- * Responsibilities:
- *  - Ensure the collection exists (auto‑create on first use)
- *  - Upsert embedded memory points
- *  - Search / retrieve / delete memories by user
- */
-
 import { randomUUID } from 'node:crypto';
 import { getQdrantClient } from '../lib/qdrant.js';
 import { EMBEDDING_DIMENSION } from '../utils/embeddings.js';
@@ -19,14 +10,6 @@ const COLLECTION_NAME = 'memories';
 
 let collectionReady = false;
 
-// ---------------------------------------------------------------------------
-// Collection bootstrap
-// ---------------------------------------------------------------------------
-
-/**
- * Ensures the `memories` collection exists in Qdrant with the correct schema.
- * Called lazily on first write so the app can start even if Qdrant is slow.
- */
 async function ensureCollection(): Promise<void> {
   if (collectionReady) return;
 
@@ -46,7 +29,6 @@ async function ensureCollection(): Promise<void> {
         },
       });
 
-      // Create payload indexes for filtering
       await client.createPayloadIndex(COLLECTION_NAME, {
         field_name: 'userId',
         field_schema: 'keyword',
@@ -74,20 +56,11 @@ async function ensureCollection(): Promise<void> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Write operations
-// ---------------------------------------------------------------------------
-
 export interface UpsertMemoryPoint {
   vector: number[];
   payload: StoredMemoryPayload;
 }
 
-/**
- * Upserts an array of memory points into Qdrant.
- *
- * @returns The IDs of the upserted points.
- */
 export async function upsertMemories(
   points: UpsertMemoryPoint[],
 ): Promise<string[]> {
@@ -114,13 +87,6 @@ export async function upsertMemories(
   return ids;
 }
 
-// ---------------------------------------------------------------------------
-// Read operations
-// ---------------------------------------------------------------------------
-
-/**
- * Search memories by semantic similarity for a given user.
- */
 export async function searchMemories(
   vector: number[],
   userId: string,
@@ -141,10 +107,6 @@ export async function searchMemories(
   return results.map((r) => r.payload as unknown as StoredMemoryPayload);
 }
 
-/**
- * Retrieve all memories for a user, optionally filtered by kind or source.
- * Supports cursor-based pagination via `offset`.
- */
 export async function getMemoriesByUser(
   userId: string,
   options?: { kind?: string; source?: MemorySource; limit?: number; offset?: string | null },
@@ -177,13 +139,6 @@ export async function getMemoriesByUser(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Delete operations
-// ---------------------------------------------------------------------------
-
-/**
- * Delete all memories for a user.
- */
 export async function deleteMemoriesByUser(userId: string): Promise<void> {
   await ensureCollection();
   const client = getQdrantClient();
@@ -198,12 +153,6 @@ export async function deleteMemoriesByUser(userId: string): Promise<void> {
   console.log(`[MemoryRepo] Deleted all memories for user ${userId}.`);
 }
 
-/**
- * Delete a specific memory point by its Qdrant ID.
- *
- * @planned vNext
- * Reserved for future single-memory deletion endpoints.
- */
 export async function deleteMemoryById(pointId: string): Promise<void> {
   await ensureCollection();
   const client = getQdrantClient();
@@ -214,9 +163,6 @@ export async function deleteMemoryById(pointId: string): Promise<void> {
   });
 }
 
-/**
- * Retrieve a single memory point by its Qdrant ID.
- */
 export async function getMemoryPointById(
   pointId: string,
 ): Promise<{ id: string; payload: StoredMemoryPayload } | null> {
@@ -236,10 +182,6 @@ export async function getMemoryPointById(
     payload: results[0]!.payload as unknown as StoredMemoryPayload,
   };
 }
-
-// ---------------------------------------------------------------------------
-// Stats
-// ---------------------------------------------------------------------------
 
 export interface MemoryStatsResult {
   total: number;
@@ -268,10 +210,6 @@ export async function getMemoryStats(userId: string): Promise<MemoryStatsResult>
     bySource: { text: textSrc.count, link: linkSrc.count, document: docSrc.count },
   };
 }
-
-// ---------------------------------------------------------------------------
-// Update
-// ---------------------------------------------------------------------------
 
 export async function updateMemoryById(
   id: string,

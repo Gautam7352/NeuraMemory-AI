@@ -1,11 +1,3 @@
-/**
- * Model Context Protocol (MCP) Router
- * Streamable HTTP transport for NeuraMemory-AI
- *
- * Uses the modern Streamable HTTP transport (POST/GET/DELETE on a single
- * endpoint) instead of SSE, following the current MCP specification.
- */
-
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -22,14 +14,8 @@ import type { Request, Response } from 'express';
 
 const router = Router();
 
-// ---------------------------------------------------------------------------
-// Session tracking: transport keyed by session ID
-// ---------------------------------------------------------------------------
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
-// ---------------------------------------------------------------------------
-// Authentication helper
-// ---------------------------------------------------------------------------
 async function extractUser(req: Request): Promise<{ userId: string } | null> {
   const apiKey =
     (req.query['apiKey'] as string | undefined) ||
@@ -44,17 +30,12 @@ async function extractUser(req: Request): Promise<{ userId: string } | null> {
   return { userId: user._id.toString() };
 }
 
-// ---------------------------------------------------------------------------
-// MCP Server factory — creates one McpServer instance per session,
-// with the userId baked into closures so LLM tools never need it.
-// ---------------------------------------------------------------------------
 function createMcpServer(userId: string): McpServer {
   const server = new McpServer(
     { name: 'neuramemory-mcp', version: '1.0.0' },
     { capabilities: { tools: {} } },
   );
 
-  // ── TOOL: save_memory ─────────────────────────────────────────
   server.tool(
     'save_memory',
     'Extract and save semantic and episodic memories from plain text.',
@@ -72,7 +53,6 @@ function createMcpServer(userId: string): McpServer {
     },
   );
 
-  // ── TOOL: save_link_memory ────────────────────────────────────
   server.tool(
     'save_link_memory',
     'Fetch content from a URL and extract memories.',
@@ -90,7 +70,6 @@ function createMcpServer(userId: string): McpServer {
     },
   );
 
-  // ── TOOL: get_memories ────────────────────────────────────────
   server.tool(
     'get_memories',
     'Retrieve stored memories. Use "query" for semantic search, or leave empty to list all.',
@@ -128,25 +107,17 @@ function createMcpServer(userId: string): McpServer {
   return server;
 }
 
-// ---------------------------------------------------------------------------
-// Health check (public — no auth)
-// ---------------------------------------------------------------------------
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'NeuraMemory-MCP' });
 });
 
-// ---------------------------------------------------------------------------
-// POST /api/v1/mcp — Main MCP endpoint (initialize + all JSON-RPC calls)
-// ---------------------------------------------------------------------------
 router.post('/', async (req: Request, res: Response): Promise<void> => {
-  // Authenticate
   const auth = await extractUser(req);
   if (!auth) {
     res.status(401).json({ error: 'API Key required' });
     return;
   }
 
-  // ── Existing session → reuse transport ──────────────────────────
   const sessionId = req.headers['mcp-session-id'] as string | undefined;
   if (sessionId && transports.has(sessionId)) {
     const transport = transports.get(sessionId)!;
@@ -154,7 +125,6 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  // ── New session → create fresh server + transport ───────────────
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
   });
@@ -162,25 +132,19 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   const server = createMcpServer(auth.userId);
   await server.connect(transport as any);
 
-  // Set cleanup after connect (transport is fully initialized)
   transport.onclose = () => {
     if (transport.sessionId) {
       transports.delete(transport.sessionId);
     }
   };
 
-  // handleRequest runs the initialize handshake and assigns session ID
   await transport.handleRequest(req, res, req.body);
 
-  // Store *after* handleRequest — the session ID is assigned during initialize
   if (transport.sessionId) {
     transports.set(transport.sessionId, transport);
   }
 });
 
-// ---------------------------------------------------------------------------
-// GET /api/v1/mcp — SSE stream for server → client notifications
-// ---------------------------------------------------------------------------
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   const sessionId = req.headers['mcp-session-id'] as string | undefined;
   if (!sessionId || !transports.has(sessionId)) {
@@ -191,9 +155,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   await transport.handleRequest(req, res);
 });
 
-// ---------------------------------------------------------------------------
-// DELETE /api/v1/mcp — Terminate session
-// ---------------------------------------------------------------------------
 router.delete('/', async (req: Request, res: Response): Promise<void> => {
   const sessionId = req.headers['mcp-session-id'] as string | undefined;
   if (!sessionId || !transports.has(sessionId)) {

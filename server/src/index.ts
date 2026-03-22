@@ -17,7 +17,6 @@ const app = express();
 app.use(helmet());
 app.use(express.json({ limit: '200kb' }));
 
-// cors addition
 const allowedOrigins = env.ALLOWED_ORIGINS.split(',').map((o: string) => o.trim()).filter(Boolean);
 
 app.use(
@@ -33,25 +32,16 @@ app.use(
   }),
 );
 
-// ---------------------------------------------------------------------------
-// API Documentation (Swagger UI)
-// ---------------------------------------------------------------------------
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/api-docs/spec.json', (_req, res) => {
   res.json(swaggerSpec);
 });
 
-// ---------------------------------------------------------------------------
-// Routes
-// ---------------------------------------------------------------------------
 app.use('/api/v1', authRouter);
 app.use('/api/v1/memories', memoryRouter);
 app.use('/api/v1/chat', chatRouter);
 app.use('/api/v1/mcp', mcpRouter);
 
-// ---------------------------------------------------------------------------
-// Error handler — must be registered after all routes
-// ---------------------------------------------------------------------------
 app.use(errorHandler);
 
 let server: ReturnType<typeof app.listen> | null = null;
@@ -86,7 +76,6 @@ async function shutdown(signal: string): Promise<void> {
   hardTimeout.unref();
 
   try {
-    // Stop accepting new HTTP connections first
     if (server) {
       await new Promise<void>((resolve, reject) => {
         server?.close((err?: Error) => {
@@ -100,19 +89,16 @@ async function shutdown(signal: string): Promise<void> {
       console.log('[Shutdown] HTTP server closed.');
     }
 
-    // Close MongoDB client if initialized
     try {
       const client = await getMongoClient();
       await client.close();
       console.log('[Shutdown] MongoDB client closed.');
     } catch {
-      // getMongoClient() may fail if never initialized / env issues; ignore on shutdown
       console.log(
         '[Shutdown] MongoDB client was not initialized or already closed.',
       );
     }
 
-    // Close Qdrant client
     try {
       closeQdrantClient();
       console.log('[Shutdown] Qdrant client closed.');
@@ -150,11 +136,9 @@ function registerProcessHandlers(): void {
 async function main(): Promise<void> {
   logStartupBanner();
 
-  // Ensure DB indexes are ready before serving traffic
   await ensureUserIndexes();
   console.log('[Startup] Database indexes verified.');
 
-  // Verify Qdrant connectivity
   try {
     const qdrant = getQdrantClient();
     await qdrant.getCollections();

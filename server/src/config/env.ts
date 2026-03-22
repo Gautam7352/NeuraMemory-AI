@@ -17,8 +17,7 @@ const envSchema = z.object({
   OPENROUTER_REFERER: z.string().url().optional(),
   OPENROUTER_TITLE: z.string().optional(),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  JWT_EXPIRES_IN: z.string().default('7d').transform(val => val.split('#')[0]!.trim()),
-  UNSTRUCTURED_API_URL: z
+  JWT_EXPIRES_IN: z.string().default('7d').transform(val => val.split('#')[0]!.trim()),  UNSTRUCTURED_API_URL: z
     .string()
     .url()
     .default('https://platform.unstructuredapp.io/api/v1'),

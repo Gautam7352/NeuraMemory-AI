@@ -25,14 +25,12 @@ export function ConfirmModal({
       aria-modal="true"
       role="dialog"
     >
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onCancel}
         aria-hidden="true"
       />
 
-      {/* Modal */}
       <div className="relative z-10 w-full max-w-md mx-4 bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl p-6 flex flex-col gap-4">
         <h2 className="text-lg font-bold text-white">{title}</h2>
         <p className="text-sm text-gray-400">{description}</p>

@@ -1,11 +1,3 @@
-/**
- * Multer configuration for memory document uploads.
- *
- * - Stores files in memory (Buffer) — suitable for documents up to 10 MB.
- * - Validates MIME type against the allowed list.
- * - Limits file size to MAX_DOCUMENT_SIZE.
- */
-
 import multer from 'multer';
 import {
   ALLOWED_DOCUMENT_MIMES,

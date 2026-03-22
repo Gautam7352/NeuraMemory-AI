@@ -3,7 +3,6 @@ import { AxiosError } from 'axios';
 import { api } from '../lib/api';
 import { useToast } from '../context/ToastContext';
 
-// ── Types ──────────────────────────────────────────────────────────────────
 type Tab = 'text' | 'link' | 'document';
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -71,7 +70,6 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 const ACCEPTED_TYPES = '.pdf,.docx,.txt,.md';
 
-// ── Component ──────────────────────────────────────────────────────────────
 const MainArea = () => {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('text');
@@ -79,8 +77,6 @@ const MainArea = () => {
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // ── Submit handlers ──────────────────────────────────────────────────────
 
   const handleTextSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -146,7 +142,6 @@ const MainArea = () => {
   return (
     <div className="flex-1 flex flex-col items-center justify-center w-full h-full px-4 py-8">
       <div className="w-full max-w-2xl flex flex-col gap-6">
-        {/* Header */}
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-extrabold text-white tracking-tight">
             Add to Memory
@@ -157,9 +152,7 @@ const MainArea = () => {
           </p>
         </div>
 
-        {/* Card */}
         <div className="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-xl overflow-hidden">
-          {/* Tab bar */}
           <div className="flex border-b border-neutral-800">
             {TABS.map((tab) => (
               <button
@@ -182,9 +175,7 @@ const MainArea = () => {
             ))}
           </div>
 
-          {/* Panel body */}
           <div className="p-6">
-            {/* ── TEXT TAB ── */}
             {activeTab === 'text' && (
               <form onSubmit={handleTextSubmit} className="flex flex-col gap-4">
                 <label className="flex flex-col gap-2">
@@ -203,7 +194,6 @@ const MainArea = () => {
               </form>
             )}
 
-            {/* ── LINK TAB ── */}
             {activeTab === 'link' && (
               <form onSubmit={handleLinkSubmit} className="flex flex-col gap-4">
                 <label className="flex flex-col gap-2">
@@ -242,7 +232,6 @@ const MainArea = () => {
               </form>
             )}
 
-            {/* ── DOCUMENT TAB ── */}
             {activeTab === 'document' && (
               <form
                 onSubmit={handleDocumentSubmit}
@@ -252,7 +241,6 @@ const MainArea = () => {
                   Upload a document
                 </span>
 
-                {/* Drop zone */}
                 <div
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -303,7 +291,6 @@ const MainArea = () => {
                   />
                 </div>
 
-                {/* Selected file badge */}
                 {selectedFile && (
                   <div className="flex items-center justify-between bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2">
                     <span className="text-xs text-slate-300 truncate">
@@ -345,7 +332,6 @@ const MainArea = () => {
           </div>
         </div>
 
-        {/* Hint */}
         <p className="text-center text-xs text-slate-600">
           Memories are private and tied to your account. View them under{' '}
           <span className="text-slate-500 font-medium">Manage Memories</span>.
@@ -355,7 +341,6 @@ const MainArea = () => {
   );
 };
 
-// ── Shared submit button ───────────────────────────────────────────────────
 function SubmitButton({ loading, label }: { loading: boolean; label: string }) {
   return (
     <button

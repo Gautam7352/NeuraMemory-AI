@@ -8,7 +8,7 @@ import {
 import { findUserById } from '../repositories/user.repository.js';
 import { AppError } from '../utils/AppError.js';
 
-const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const emailSchema = z
   .string({
@@ -155,7 +155,6 @@ export async function meController(
       throw new AppError(401, 'Unauthorized');
     }
     
-    // We can just import and use findUserById from repository
     const user = await findUserById(userId);
     if (!user) {
       throw new AppError(404, 'User not found');

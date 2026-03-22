@@ -39,13 +39,11 @@ export default function Sidebar() {
         <p className="px-4 py-4 text-xs text-neutral-500">Could not load stats</p>
       ) : stats ? (
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
-          {/* Total */}
           <div className="text-center">
             <p className="text-3xl font-bold text-neutral-100">{stats.total}</p>
             <p className="text-xs text-neutral-500 mt-0.5">Total Memories</p>
           </div>
 
-          {/* By Type */}
           <div>
             <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
               By Type
@@ -54,7 +52,6 @@ export default function Sidebar() {
             <StatRow label="Bubble" value={stats.byKind.bubble} />
           </div>
 
-          {/* By Source */}
           <div>
             <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
               By Source
@@ -66,7 +63,6 @@ export default function Sidebar() {
         </div>
       ) : null}
 
-      {/* Quick actions */}
       <div className="px-4 py-4 border-t border-neutral-800 space-y-2 mt-auto">
         <Link
           to="/"

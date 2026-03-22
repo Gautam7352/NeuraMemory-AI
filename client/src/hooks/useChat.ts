@@ -11,7 +11,6 @@ export function useChat() {
     async (text: string) => {
       if (!text.trim() || streaming) return;
 
-      // Append user message + empty assistant placeholder
       const userMsg: ChatMessage = { role: 'user', content: text.trim() };
       const assistantMsg: ChatMessage = { role: 'assistant', content: '' };
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
@@ -64,14 +63,12 @@ export function useChat() {
                 showToast('error', event.message ?? 'Chat error occurred.');
               }
             } catch {
-              // ignore malformed JSON lines
             }
           }
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Failed to connect to chat.';
         showToast('error', msg);
-        // Remove the empty assistant placeholder on hard failure
         setMessages((prev) => {
           const next = [...prev];
           if (next[next.length - 1]?.role === 'assistant' && next[next.length - 1].content === '') {

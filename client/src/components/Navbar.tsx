@@ -14,14 +14,12 @@ const Navbar = () => {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  // Fetch user profile on mount
   useEffect(() => {
     api.get<{ success: boolean; data: UserProfile }>('/api/v1/profile')
       .then((res) => setProfile(res.data.data))
-      .catch(() => {/* silently suppress errors */});
+      .catch(() => {});
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -58,8 +56,7 @@ const Navbar = () => {
       setApiKey(generatedKey);
       setIsApiKeyModalOpen(true);
     } catch (err) {
-      console.error(err);
-      setApiKeyError('Unable to generate API key. Please try again.');
+      console.error(err);      setApiKeyError('Unable to generate API key. Please try again.');
     } finally {
       setIsApiKeyLoading(false);
     }
@@ -72,13 +69,11 @@ const Navbar = () => {
 
   return (
     <nav className="w-full flex items-center justify-between px-6 py-3 bg-neutral-950 border-b border-neutral-800 shadow-sm z-50">
-      {/* ── Logo ────────────────────────────────────────── */}
       <button
         onClick={() => navigate('/')}
         className="flex flex-col items-start gap-0.5 focus:outline-none"
       >
         <span className="flex items-center gap-2">
-          {/* Icon */}
           <svg
             width="32"
             height="32"
@@ -138,7 +133,6 @@ const Navbar = () => {
             />
           </svg>
 
-          {/* Wordmark */}
           <span className="text-lg font-black tracking-tight">
             <span className="text-sky-400">Neura</span>
             <span className="text-slate-500">Memory</span>
@@ -147,9 +141,7 @@ const Navbar = () => {
         </span>
       </button>
 
-      {/* ── Right: nav links + avatar ────────────────────── */}
       <div className="flex items-center gap-4">
-        {/* Manage Memories shortcut */}
         <button
           onClick={handleManageMemories}
           className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-sky-400 transition-colors duration-150"
@@ -172,7 +164,6 @@ const Navbar = () => {
           Memories
         </button>
 
-        {/* Avatar / dropdown trigger */}
         <div className="relative" ref={menuRef}>
           <button
             type="button"
@@ -197,14 +188,12 @@ const Navbar = () => {
             </svg>
           </button>
 
-          {/* Dropdown menu */}
           {menuOpen && (
             <div
               role="menu"
               aria-label="Profile menu"
               className="absolute right-0 mt-2 w-56 bg-neutral-900 border border-neutral-700 rounded-xl shadow-xl py-1 z-50 animate-fade-in"
             >
-              {/* Profile info */}
               {profile && (
                 <div className="px-4 py-2.5 border-b border-neutral-800">
                   <p className="text-sm font-medium text-slate-200 truncate">{profile.email}</p>

@@ -25,7 +25,6 @@ export async function chatController(
     return;
   }
 
-  // Set SSE headers before any streaming begins
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');

@@ -13,16 +13,10 @@ import { AppError } from '../utils/AppError.js';
 const SALT_ROUNDS = 12;
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password.';
 
-/**
- * Hashes a plaintext password using bcrypt.
- */
 async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);
 }
 
-/**
- * Compares plaintext password against a bcrypt hash.
- */
 async function verifyPassword(
   plainTextPassword: string,
   passwordHash: string,
@@ -30,9 +24,6 @@ async function verifyPassword(
   return bcrypt.compare(plainTextPassword, passwordHash);
 }
 
-/**
- * Signs and returns a JWT token for auth payload.
- */
 function signAuthToken(payload: AuthPayload): string {
   const options: SignOptions = {};
   const expiresIn = env.JWT_EXPIRES_IN as SignOptions['expiresIn'];
@@ -44,9 +35,6 @@ function signAuthToken(payload: AuthPayload): string {
   return jwt.sign(payload, env.JWT_SECRET, options);
 }
 
-/**
- * Builds a standard auth response structure.
- */
 function buildAuthResponse(
   message: string,
   user: { id: string; email: string },
@@ -64,23 +52,15 @@ function buildAuthResponse(
   };
 }
 
-/**
- * Masks an email address for safe logging.
- * e.g. "user@example.com" → "u***@example.com"
- */
 function maskEmail(email: string): string {
   const atIndex = email.indexOf('@');
   if (atIndex <= 0) return '[invalid-email]';
   const local = email.slice(0, atIndex);
-  const domain = email.slice(atIndex); // includes the @
+  const domain = email.slice(atIndex);
   const masked = local.length <= 1 ? '*'.repeat(local.length) : `${local[0]}***`;
   return `${masked}${domain}`;
 }
 
-/**
- * Logs structured auth errors without leaking sensitive secrets.
- * Email is masked before logging to protect user privacy.
- */
 function logAuthError(
   operation: 'register' | 'login',
   email: string,
@@ -109,13 +89,6 @@ function logAuthError(
   });
 }
 
-/**
- * Registers a new user.
- * - Checks for duplicate email
- * - Hashes password with bcrypt
- * - Persists the new user document
- * - Returns a signed JWT
- */
 export async function registerService(
   email: string,
   password: string,
@@ -139,15 +112,6 @@ export async function registerService(
   }
 }
 
-/**
- * Authenticates an existing user.
- * - Looks up the user by email
- * - Compares provided password against the stored hash
- * - Returns a signed JWT on success
- *
- * Uses a generic error message for both "user not found" and "wrong password"
- * to avoid user enumeration.
- */
 export async function loginService(
   email: string,
   password: string,
@@ -176,11 +140,7 @@ export async function loginService(
   }
 }
 
-/**
- * Generates a new API Key for the user.
- */
 export async function generateApiService(userId: string): Promise<{ apiKey: string }> {
-  // Generate a random 32-byte hex string and prefix it with nm_ (NeuraMemory)
   const apiKey = `nm_${crypto.randomBytes(32).toString('hex')}`;
   
   await updateUserApiKey(userId, apiKey);

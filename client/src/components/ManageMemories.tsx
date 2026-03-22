@@ -103,7 +103,6 @@ function MemoryCard({
       await onSaveEdit(memory.id, editText);
       setEditing(false);
     } catch {
-      // onSaveEdit re-throws on failure so we stay in edit mode
     } finally {
       setSaving(false);
     }
@@ -221,26 +220,21 @@ const ManageMemories = () => {
   const [error, setError] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  // Pagination state
   const [nextOffset, setNextOffset] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  // Filter state
   const [kindFilter, setKindFilter] = useState<KindFilter>('');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('');
 
-  // Search state (14.1)
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
-  // Delete modal state (14.3)
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deletingSingle, setDeletingSingle] = useState(false);
 
-  // Debounce search query (14.1)
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -283,7 +277,6 @@ const ManageMemories = () => {
     [buildUrl],
   );
 
-  // Search fetch (14.1)
   const fetchSearch = useCallback(async (q: string) => {
     setLoading(true);
     setError(null);
@@ -301,7 +294,6 @@ const ManageMemories = () => {
     }
   }, []);
 
-  // React to debounced query changes (14.1)
   useEffect(() => {
     if (debouncedQuery.trim()) {
       fetchSearch(debouncedQuery.trim());
@@ -342,7 +334,6 @@ const ManageMemories = () => {
     setMemories([]);
   };
 
-  // Single delete via modal (14.3)
   const handleDelete = (id: string) => {
     setDeleteTargetId(id);
   };
@@ -363,7 +354,6 @@ const ManageMemories = () => {
     }
   };
 
-  // Delete all (14.3)
   const handleConfirmDeleteAll = async () => {
     setDeletingAll(true);
     try {
@@ -381,22 +371,19 @@ const ManageMemories = () => {
     }
   };
 
-  // Inline edit save (14.2)
   const handleSaveEdit = async (id: string, newText: string) => {
     const original = memories.find((m) => m.id === id);
     if (!original) return;
 
-    // Optimistic update
     setMemories((prev) => prev.map((m) => (m.id === id ? { ...m, text: newText } : m)));
 
     try {
       await api.patch(`/api/v1/memories/${id}`, { text: newText });
     } catch (err) {
-      // Revert on error
       setMemories((prev) => prev.map((m) => (m.id === id ? { ...m, text: original.text } : m)));
       const msg = err instanceof AxiosError ? (err.response?.data?.message ?? 'Failed to update memory.') : 'Failed to update memory.';
       showToast('error', msg);
-      throw err; // re-throw so MemoryCard knows to stay in edit mode
+      throw err;
     }
   };
 
@@ -417,7 +404,6 @@ const ManageMemories = () => {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-black p-3 sm:p-4 md:p-8">
       <div className="w-full max-w-7xl min-h-[70vh] bg-neutral-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-800 p-4 sm:p-6 md:p-10 flex flex-col gap-6 mx-auto">
-        {/* Header */}
         <div className="w-full rounded-2xl border border-gray-700 bg-linear-to-r from-neutral-900 via-neutral-900 to-slate-900/60 p-4 sm:p-5 md:p-6">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div>
@@ -450,7 +436,6 @@ const ManageMemories = () => {
         </div>
 
         <div className="w-full rounded-2xl border border-gray-700 bg-[#232b36] p-4 md:p-6">
-          {/* Search input (14.1) */}
           <div className="relative mb-4">
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"
@@ -473,7 +458,6 @@ const ManageMemories = () => {
             />
           </div>
 
-          {/* Filter controls — hidden in search mode (14.1) */}
           {!isSearchMode && (
             <div className="flex flex-col sm:flex-row gap-4 mb-5">
               <div className="flex items-center gap-2 flex-wrap">
@@ -534,7 +518,6 @@ const ManageMemories = () => {
             </div>
           )}
 
-          {/* Load more — hidden in search mode (14.1) */}
           {!isSearchMode && hasMore && (
             <div className="flex justify-center mt-6">
               <button
@@ -550,7 +533,6 @@ const ManageMemories = () => {
         </div>
       </div>
 
-      {/* Delete All modal (14.3) */}
       <ConfirmModal
         open={showDeleteAllModal}
         title="Delete All Memories"
@@ -561,7 +543,6 @@ const ManageMemories = () => {
         onCancel={() => setShowDeleteAllModal(false)}
       />
 
-      {/* Single delete modal (14.3) */}
       <ConfirmModal
         open={deleteTargetId !== null}
         title="Delete Memory"

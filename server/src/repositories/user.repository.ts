@@ -4,10 +4,6 @@ import { IUser } from '../types/auth.types.js';
 
 const COLLECTION = 'users';
 
-/**
- * Ensures a unique index on the email field.
- * Should be called once at application startup.
- */
 export async function ensureUserIndexes(): Promise<void> {
   const db = await getDb();
   await db
@@ -15,9 +11,6 @@ export async function ensureUserIndexes(): Promise<void> {
     .createIndex({ email: 1 }, { unique: true });
 }
 
-/**
- * Finds a single user document by email address.
- */
 export async function findUserByEmail(
   email: string,
 ): Promise<WithId<IUser> | null> {
@@ -25,9 +18,6 @@ export async function findUserByEmail(
   return db.collection<IUser>(COLLECTION).findOne({ email });
 }
 
-/**
- * Finds a single user document by API Key.
- */
 export async function findUserByApiKey(
   apiKey: string,
 ): Promise<WithId<IUser> | null> {
@@ -35,23 +25,12 @@ export async function findUserByApiKey(
   return db.collection<IUser>(COLLECTION).findOne({ apiKey });
 }
 
-
-
-/**
- * Finds a single user document by its MongoDB ObjectId string.
- *
- * @planned vNext
- * Reserved for upcoming account/profile endpoints.
- */
 export async function findUserById(id: string): Promise<WithId<IUser> | null> {
   const { ObjectId } = await import('mongodb');
   const db = await getDb();
   return db.collection<IUser>(COLLECTION).findOne({ _id: new ObjectId(id) });
 }
 
-/**
- * Inserts a new user into the users collection and returns the full document.
- */
 export async function createUser(
   email: string,
   passwordHash: string,
@@ -71,9 +50,6 @@ export async function createUser(
   return { _id: result.insertedId, ...user };
 }
 
-/**
- * Updates a user's API Key.
- */
 export async function updateUserApiKey(
   id: string,
   apiKey: string,

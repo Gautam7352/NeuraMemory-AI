@@ -5,7 +5,6 @@ export default defineConfig({
     environment: 'node',
     globals: false,
     include: ['src/**/*.test.ts'],
-    // Use pool: 'forks' for better ESM support
     pool: 'forks',
   },
 });

@@ -6,9 +6,6 @@ const baseUrl = env.OPENROUTER_BASE_URL;
 
 let openrouter: OpenAI;
 
-/**
- * Singleton OpenAI client pre-configured for OpenRouter.
- */
 export function getOpenRouterClient(): OpenAI {
   if (!openrouter) {
     if (!apiKey) {

@@ -8,8 +8,8 @@ COPY server/package*.json ./
 RUN npm ci
 
 # Copy source and compile TypeScript → dist/
-COPY server/tsconfig.json ./
-COPY server/src ./src
+COPY tsconfig.json ./
+COPY src ./src
 RUN npm run build
 
 # ─── Production Stage ─────────────────────────────────────────────────────────

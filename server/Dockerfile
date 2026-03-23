@@ -17,8 +17,8 @@ FROM node:24-alpine AS runner
 
 WORKDIR /app
 
-# Install OCR dependencies (pdftoppm + tesseract)
-RUN apk add --no-cache poppler-utils tesseract-ocr tesseract-ocr-data-eng ttf-dejavu
+# Disable local Tesseract OCR fallback — using Unstructured.io instead
+ENV OCR_ENABLE_LOCAL_FALLBACK=false
 
 # Install only production dependencies
 COPY package*.json ./

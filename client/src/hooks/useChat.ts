@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { useToast } from '../context/ToastContext';
 import type { ChatMessage } from '../types';
 
+const CHAT_URL = `${import.meta.env.VITE_API_URL ?? ''}/api/v1/chat`;
+
 export function useChat() {
   const { showToast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -17,7 +19,7 @@ export function useChat() {
       setStreaming(true);
 
       try {
-        const res = await fetch('/api/v1/chat', {
+        const res = await fetch(CHAT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -31,10 +33,11 @@ export function useChat() {
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let done = false;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        while (!done) {
+          const { done: streamDone, value } = await reader.read();
+          if (streamDone) break;
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
@@ -58,11 +61,15 @@ export function useChat() {
                   return next;
                 });
               } else if (event.type === 'done') {
+                done = true;
                 break;
               } else if (event.type === 'error') {
                 showToast('error', event.message ?? 'Chat error occurred.');
+                done = true;
+                break;
               }
             } catch {
+              // ignore malformed SSE lines
             }
           }
         }

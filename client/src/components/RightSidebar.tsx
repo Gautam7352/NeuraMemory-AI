@@ -49,7 +49,7 @@ function MessageBubble({ role, content, isStreaming }: { role: 'user' | 'assista
 }
 
 function RightSidebar() {
-  const isEnabled = import.meta.env.VITE_CHAT_ENABLED === 'true';
+  const isEnabled = import.meta.env.VITE_CHAT_ENABLED !== 'false';
   const { messages, streaming, sendMessage } = useChat();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);

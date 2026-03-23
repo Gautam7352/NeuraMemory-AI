@@ -8,7 +8,7 @@ COPY package*.json ./
 RUN npm ci
 
 # Copy source and compile TypeScript → dist/
-COPY server/tsconfig.json ./
+COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 

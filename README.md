@@ -1,10 +1,20 @@
-# NeuraMemory-AI
 
-## Intro
+## NeuraMemory AI
 
-NeuraMemory-AI is a full-stack platform for memory ingestion and retrieval.
+NeuraMemory AI is an intelligent system designed to augment human memory and knowledge management using advanced AI. It acts like a “second brain,” helping you save, organize, and find information easily, while understanding context, linking related ideas, and giving smart summaries and insights.
 
-It accepts text, links, and documents through an LLM pipeline, generates embeddings, stores vectors in Qdrant, and secures access with JWT via `httpOnly` cookies or `Authorization: Bearer` tokens.
+**Key Features:**
+
+- **Full-Stack Web Application** with a user-friendly chatbot interface.
+- **Secure Authentication:** Includes login and signup functionality for safe user access.
+- **Multi-Modal Interaction:** Users can interact via text, links, files, and documents.
+- **Memory Management:**
+	- All chats are stored as memories.
+	- Memories are displayed as cards on the **Manage Memory** page.
+	- Users can **add, update, or delete memories** easily.
+- **Conversational Memory:** Talk to your stored memories anytime.
+- **Central AI Hub:** Acts as a unified interface connecting multiple AI tools and services.
+
 
 ## Features
 
@@ -19,7 +29,31 @@ It accepts text, links, and documents through an LLM pipeline, generates embeddi
 - Access OpenAPI docs via Swagger UI in non-production mode.
 - Support MCP transport at `/api/v1/mcp`.
 
+
 ## How to Run
+
+### Quick commands (Make + Docker)
+
+```bash
+make dev          # Start development environment
+make dev-down     # Stop development environment
+make prod-up      # Start production services
+make prod-down    # Stop production services
+make logs         # View logs
+make clean        # Stop and remove containers
+```
+
+```bash
+# Development
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+# Production
+docker compose up -d
+docker compose down
+
+# View logs
+docker compose logs -f
+```
 
 ### Local setup
 
@@ -51,13 +85,12 @@ Endpoints:
 
 - Frontend: `http://localhost:5173`
 - API: `http://localhost:3000`
-- API docs (non-production): `http://localhost:3000/api-docs`
 
-### Docker setup
+For more details, see:
 
-```bash
-docker compose up -d
-```
+* [Server Documentation](https://github.com/NeuraMemoryAI/NeuraMemory-AI/blob/main/server/docs/README.md)
+* [API Documentation](https://github.com/NeuraMemoryAI/NeuraMemory-AI/blob/main/server/docs/API.md)
+* [Docker Guide](https://github.com/NeuraMemoryAI/NeuraMemory-AI/blob/main/DOCKER.md)
 
 ### Environment variables
 

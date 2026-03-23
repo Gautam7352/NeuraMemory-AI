@@ -100,7 +100,8 @@ const Navbar = () => {
             {menuOpen && (
               <div
                 role="menu"
-                className="absolute right-0 mt-2 w-52 glass-strong rounded-xl shadow-2xl py-1.5 z-50 animate-fade-in"
+                className="absolute right-0 mt-2 w-52 rounded-xl shadow-2xl py-1.5 z-50 animate-fade-in"
+              style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,0.1)' }}
               >
                 {profile && (
                   <div className="px-4 py-2.5 border-b border-white/6">

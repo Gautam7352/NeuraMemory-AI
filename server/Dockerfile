@@ -4,7 +4,7 @@ FROM node:24-alpine AS builder
 WORKDIR /app
 
 # Install all dependencies (including devDependencies needed for tsc)
-COPY package*.json ./
+COPY server/package*.json ./
 RUN npm ci
 
 # Copy source and compile TypeScript → dist/
@@ -21,7 +21,7 @@ WORKDIR /app
 ENV OCR_ENABLE_LOCAL_FALLBACK=false
 
 # Install only production dependencies
-COPY package*.json ./
+COPY server/package*.json ./
 RUN npm ci --omit=dev
 
 # Copy compiled output from the builder stage

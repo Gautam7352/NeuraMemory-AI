@@ -27,7 +27,7 @@ const envSchema = z.object({
   OCR_ENABLE_LOCAL_FALLBACK: z.string().default('true'),
   OCR_TESSERACT_LANG: z.string().default('eng'),
   OCR_FORCE: z.string().default('false'),
-  //ALLOWED_ORIGINS: z.string().default('https://neuramemoryai.netlify.app,http://localhost:5173,http://localhost:5174'),,
+  ALLOWED_ORIGINS: z.string().default('http://localhost:5173,http://localhost:5174'),
 });
 
 const _env = envSchema.safeParse(process.env);

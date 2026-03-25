@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
+import { env } from '../config/env.js';
 import {
   loginService,
   registerService,
@@ -62,9 +63,9 @@ export async function loginController(
 
     res.cookie('authorization', response.token, {
       httpOnly: true,
-      secure: process.env['NODE_ENV'] === 'production',
-      sameSite: process.env['NODE_ENV'] === 'production' ? 'none' : 'lax',
-      maxAge: 60 * 60 * 1000,
+      secure: env.NODE_ENV === 'production',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: COOKIE_MAX_AGE_MS,
     });
 
     res.status(200).json(response);
@@ -90,10 +91,10 @@ export async function registerController(
     const { email, password } = result.data;
     const response = await registerService(email, password);
 
-    res.cookie("authorization", response.token, {
+    res.cookie('authorization', response.token, {
       httpOnly: true,
-      secure: process.env['NODE_ENV'] === "production",
-      sameSite: process.env['NODE_ENV'] === 'production' ? 'none' : 'lax',
+      secure: env.NODE_ENV === 'production',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: COOKIE_MAX_AGE_MS,
     });
 
@@ -134,8 +135,8 @@ export async function logoutController(
   try {
     res.clearCookie('authorization', {
       httpOnly: true,
-      secure: process.env['NODE_ENV'] === 'production',
-      sameSite: process.env['NODE_ENV'] === 'production' ? 'none' : 'lax',
+      secure: env.NODE_ENV === 'production',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
     res.status(200).json({ success: true, message: 'Logged out successfully' });
   } catch (err) {

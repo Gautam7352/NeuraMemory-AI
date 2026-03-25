@@ -36,17 +36,8 @@ export function requireAuth(
     }
 
     // 2. Fallback: Check for 'authorization' inside the Cookie header
-    if (!token && req.headers.cookie) {
-      // Manual parsing of the cookie string
-      const cookies = req.headers.cookie.split(';').reduce((acc, cookie) => {
-        const [key, value] = cookie.trim().split('=');
-        if (key) {
-          acc[key] = value || '';
-        }
-        return acc;
-      }, {} as Record<string, string>);
-
-      token = cookies['authorization'];
+    if (!token && req.cookies) {
+      token = req.cookies['authorization'];
     }
 
     // 3. If no token is found in either place, throw error

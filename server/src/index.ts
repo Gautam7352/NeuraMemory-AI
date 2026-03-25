@@ -2,6 +2,7 @@ import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import authRouter from './routes/auth.route.js';
 import memoryRouter from './routes/memorie.route.js';
@@ -15,6 +16,7 @@ import { getQdrantClient, closeQdrantClient } from './lib/qdrant.js';
 
 const app = express();
 app.use(helmet());
+app.use(cookieParser());
 app.use(express.json({ limit: '200kb' }));
 
 // cors

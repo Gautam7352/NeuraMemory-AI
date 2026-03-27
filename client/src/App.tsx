@@ -35,7 +35,7 @@ function AppContent() {
         path="/manage-memories"
         element={
           <ProtectedRoute>
-            <div className="min-h-screen w-full bg-neutral-950 font-sans flex flex-col">
+            <div className="h-screen w-full bg-neutral-950 font-sans flex flex-col overflow-hidden">
               <Navbar />
               <ManageMemories />
             </div>

@@ -42,7 +42,7 @@ const Signup = () => {
   return (
     <main className="relative flex flex-col items-center justify-center min-h-screen bg-black px-4 py-12 overflow-hidden">
       <div className="absolute inset-0 bg-linear-to-br from-neutral-900/80 to-neutral-800/60 pointer-events-none z-0" />
-      <div className="relative w-full max-w-xl bg-neutral-900 rounded-3xl shadow-2xl border border-gray-800 p-6 sm:p-10 flex flex-col gap-8 animate-fade-in z-10">
+      <div className="relative w-full max-w-xl bg-neutral-900 rounded-3xl shadow-2xl border border-gray-800 p-10 flex flex-col gap-8 animate-fade-in z-10">
         <div className="flex flex-col items-center gap-2">
           <h1 className="text-xl font-extrabold text-white mb-1">
             Create account

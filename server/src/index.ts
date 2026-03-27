@@ -12,7 +12,6 @@ import { ensureUserIndexes } from './repositories/user.repository.js';
 import { getMongoClient } from './lib/mongodb.js';
 import mcpRouter from './routes/mcp.route.js';
 import healthRouter from './routes/health.route.js';
-import chatRouter from './routes/chat.route.js';
 import { getQdrantClient, closeQdrantClient } from './lib/qdrant.js';
 
 const app = express();
@@ -53,7 +52,6 @@ app.get('/api-docs/spec.json', (_req, res) => {
 app.use('/api/v1', authRouter);
 app.use('/api/v1/memories', memoryRouter);
 app.use('/api/v1/mcp', mcpRouter);
-app.use('/api/v1/chat', chatRouter);
 app.use('/health', healthRouter);
 
 // ---------------------------------------------------------------------------

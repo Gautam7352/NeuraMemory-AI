@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router';
 import { AxiosError } from 'axios';
 import { api } from '../lib/api';
 
@@ -76,7 +75,6 @@ const ACCEPTED_TYPES = '.pdf,.docx,.txt,.md';
 
 // ── Component ──────────────────────────────────────────────────────────────
 const MainArea = () => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('text');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -170,11 +168,11 @@ const MainArea = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center w-full h-full px-2 sm:px-4 py-4 sm:py-8">
+    <div className="flex-1 flex flex-col items-center justify-center w-full h-full px-4 py-8">
       <div className="w-full max-w-2xl flex flex-col gap-6">
         {/* Header */}
         <div className="flex flex-col gap-1">
-          <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">
             Add to Memory
           </h1>
           <p className="text-sm text-slate-400">
@@ -210,7 +208,7 @@ const MainArea = () => {
           </div>
 
           {/* Panel body */}
-          <div className="p-4 sm:p-6">
+          <div className="p-6">
             {/* ── TEXT TAB ── */}
             {activeTab === 'text' && (
               <form onSubmit={handleTextSubmit} className="flex flex-col gap-4">
@@ -412,17 +410,6 @@ const MainArea = () => {
           Memories are private and tied to your account. View them under{' '}
           <span className="text-slate-500 font-medium">Manage Memories</span>.
         </p>
-
-        {/* Manage Memories button */}
-        <button
-          onClick={() => navigate('/manage-memories')}
-          className="w-full flex items-center justify-center gap-2 border border-neutral-700 hover:border-neutral-500 text-slate-400 hover:text-white rounded-xl py-3 text-sm font-semibold transition-colors duration-150 cursor-pointer"
-        >
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18" />
-          </svg>
-          Manage Memories
-        </button>
       </div>
     </div>
   );

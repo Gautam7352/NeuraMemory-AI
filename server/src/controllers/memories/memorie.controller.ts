@@ -12,7 +12,6 @@ import {
   getUserMemories,
   clearUserMemories,
   deleteUserMemoryById,
-  updateMemoryById as updateMemoryByIdService,
 } from '../../services/memory.service.js';
 import { AppError } from '../../utils/AppError.js';
 import type { MemorySource } from '../../types/memory.types.js';
@@ -129,7 +128,7 @@ export async function getMemories(
     const sourceRaw = req.query['source'];
     const source: MemorySource | undefined =
       typeof sourceRaw === 'string' &&
-        ['text', 'document', 'link'].includes(sourceRaw)
+      ['text', 'document', 'link'].includes(sourceRaw)
         ? (sourceRaw as MemorySource)
         : undefined;
 
@@ -196,36 +195,6 @@ export async function deleteMemoryById(
     }
     await deleteUserMemoryById(userId, pointId);
     res.status(200).json({ success: true, message: 'Memory deleted.' });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function updateMemoryById(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const userId = getAuthUserId(req);
-
-    const result = plainTextSchema.safeParse(req.body);
-    if (!result.success) {
-      throw new AppError(
-        400,
-        result.error.errors[0]?.message ?? 'Invalid input.',
-      );
-    }
-
-    const pointId = Array.isArray(req.params['id'])
-      ? req.params['id'][0]
-      : req.params['id'];
-    if (!pointId) {
-      throw new AppError(400, 'Memory ID is required.');
-    }
-
-    await updateMemoryByIdService(userId, pointId, result.data.text);
-    res.status(200).json({ success: true, message: 'Memory updated.' });
   } catch (err) {
     next(err);
   }

@@ -34,7 +34,7 @@ const Login = () => {
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-black px-4 py-12">
-      <div className="w-full max-w-xl bg-neutral-900 rounded-3xl shadow-2xl border border-gray-800 p-6 sm:p-10 flex flex-col gap-8 animate-fade-in">
+      <div className="w-full max-w-xl bg-neutral-900 rounded-3xl shadow-2xl border border-gray-800 p-10 flex flex-col gap-8 animate-fade-in">
         <div className="flex flex-col items-center gap-2">
           <h1 className="text-3xl font-extrabold text-white mb-1">
             Sign in to NeuraMemoryAI

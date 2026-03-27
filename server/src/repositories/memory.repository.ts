@@ -148,7 +148,7 @@ export async function searchMemories(
 export async function getMemoriesByUser(
   userId: string,
   options?: { kind?: string; source?: MemorySource; limit?: number; offset?: string | null },
-): Promise<{ points: (StoredMemoryPayload & { id: string })[]; nextOffset: string | null }> {
+): Promise<{ points: StoredMemoryPayload[]; nextOffset: string | null }> {
   await ensureCollection();
   const client = getQdrantClient();
 
@@ -172,10 +172,7 @@ export async function getMemoriesByUser(
   });
 
   return {
-    points: results.points.map((p) => ({
-      id: String(p.id),
-      ...(p.payload as unknown as StoredMemoryPayload),
-    })),
+    points: results.points.map((p) => p.payload as unknown as StoredMemoryPayload),
     nextOffset: results.next_page_offset ? String(results.next_page_offset) : null,
   };
 }
@@ -199,63 +196,6 @@ export async function deleteMemoriesByUser(userId: string): Promise<void> {
   });
 
   console.log(`[MemoryRepo] Deleted all memories for user ${userId}.`);
-}
-
-/**
- * Update an existing memory point's vector and text payload.
- *
- * @param pointId - The Qdrant point ID to update.
- * @param vector  - The new embedding vector for the updated text.
- * @param text    - The new text content to store in the payload.
- */
-export async function updateMemoryPoint(
-  pointId: string,
-  vector: number[],
-  text: string,
-  existingPayload: Partial<StoredMemoryPayload> = {},
-): Promise<void> {
-  await ensureCollection();
-  const client = getQdrantClient();
-
-  await client.upsert(COLLECTION_NAME, {
-    wait: true,
-    points: [
-      {
-        id: pointId,
-        vector,
-        payload: {
-          ...existingPayload,
-          text,
-          updatedAt: new Date().toISOString(),
-        },
-      },
-    ],
-  });
-
-  console.log(`[MemoryRepo] Updated memory point ${pointId}.`);
-}
-
-/**
- * Retrieve a single memory point by its Qdrant ID.
- */
-export async function getMemoryPointById(
-  pointId: string,
-): Promise<{ id: string; payload: StoredMemoryPayload } | null> {
-  await ensureCollection();
-  const client = getQdrantClient();
-
-  const results = await client.retrieve(COLLECTION_NAME, {
-    ids: [pointId],
-    with_payload: true,
-    with_vector: false,
-  });
-
-  if (results.length === 0) return null;
-
-  return {
-    id: String(results[0]!.id),
-    payload: results[0]!.payload as unknown as StoredMemoryPayload,
-  };
 }
 
 /**

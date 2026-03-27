@@ -29,15 +29,31 @@ export function isUnstructuredConfigured(): boolean {
   return Boolean(env.UNSTRUCTURED_API_KEY);
 }
 
+function mimetypeFromFilename(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'pdf':
+      return 'application/pdf';
+    case 'docx':
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    case 'md':
+      return 'text/markdown';
+    default:
+      return 'application/octet-stream';
+  }
+}
+
 export async function extractTextWithUnstructured(
   buffer: Buffer,
   filename: string,
+  mimetype?: string,
 ): Promise<string> {
   if (!env.UNSTRUCTURED_API_KEY) {
     throw new AppError(502, 'Unstructured API key is not configured for OCR.');
   }
 
-  const { jobId } = await submitUnstructuredJob(buffer, filename);
+  const resolvedMimetype = mimetype ?? mimetypeFromFilename(filename);
+  const { jobId } = await submitUnstructuredJob(buffer, filename, resolvedMimetype);
   const job = await pollUnstructuredJob(jobId);
 
   if (job.status !== 'COMPLETED') {
@@ -71,6 +87,7 @@ export async function extractTextWithUnstructured(
 async function submitUnstructuredJob(
   buffer: Buffer,
   filename: string,
+  mimetype: string,
 ): Promise<{ jobId: string }> {
   const apiKey = env.UNSTRUCTURED_API_KEY;
   if (!apiKey) {
@@ -84,7 +101,7 @@ async function submitUnstructuredJob(
   form.append('request_data', requestData);
   form.append(
     'input_files',
-    new Blob([new Uint8Array(buffer)], { type: 'application/pdf' }),
+    new Blob([new Uint8Array(buffer)], { type: mimetype }),
     filename,
   );
 

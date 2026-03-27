@@ -5,6 +5,10 @@ import {
   extractTextFromDocument,
 } from '../utils/content-extractors.js';
 import {
+  extractTextWithUnstructured,
+  isUnstructuredConfigured,
+} from '../lib/unstructured.js';
+import {
   upsertMemories,
   getMemoriesByUser,
   deleteMemoriesByUser,
@@ -105,10 +109,9 @@ export async function processPlainText(
 export async function processDocument(
   input: DocumentInput,
 ): Promise<MemoryResponse> {
-  const text = await extractTextFromDocument(
-    input.buffer,
-    input.mimetype,
-  );
+  const text = isUnstructuredConfigured()
+    ? await extractTextWithUnstructured(input.buffer, input.filename, input.mimetype)
+    : await extractTextFromDocument(input.buffer, input.mimetype);
   return processText(text, input.userId, 'document', input.filename);
 }
 

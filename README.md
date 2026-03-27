@@ -119,7 +119,7 @@ JWT_SECRET=your_secret_with_minimum_32_characters
       "args": [
         "-y",
         "mcp-remote",
-        "here-https-server-url/api/v1/mcp?apiKey={YOUR_API_KEY}"
+        "https://neuramemory-ai.onrender.com/api/v1/mcp?apiKey={YOUR_API_KEY}"
       ]
     }
   },

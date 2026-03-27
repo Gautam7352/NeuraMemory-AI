@@ -1,11 +1,11 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  test: {
-    environment: 'node',
-    globals: false,
-    include: ['src/**/*.test.ts'],
-    // Use pool: 'forks' for better ESM support
-    pool: 'forks',
+  plugins: [react(), tailwindcss()],
+  server: {
+    host: true,
+    port: 5173,
   },
 });

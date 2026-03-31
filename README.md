@@ -146,7 +146,7 @@ cp client/.env.example client/.env.production
 
 - Frontend: React, TypeScript, Vite, Tailwind CSS, Axios
 - Backend: Node.js, Express, TypeScript, Zod, JWT, Multer
-- Database: MongoDB (user/account data), Qdrant (vector storage)
+- Database: PostgresDB (user/account data), Qdrant (vector storage)
 - AI: OpenRouter (memory extraction and embeddings)
 - Processing: Firecrawl, pdfjs-dist, document parsers, local OCR fallback
 - Tooling: ESLint, Prettier, Vitest, Docker Compose
@@ -158,3 +158,5 @@ cp client/.env.example client/.env.production
 - To ensure generic and custom support for as many platforms and IDEs as possible.
 - To improve the architecture such that local LLMs and BYOK features are supported seamlessly (For those who want to self-host)
 - Implement Installation guide for users
+
+**[See the project details](https://neuramemory-ai-ea5s372.gamma.site/)**

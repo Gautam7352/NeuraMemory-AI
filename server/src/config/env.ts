@@ -8,7 +8,7 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),
-  MONGODB_URI: z.string().url(),
+  DATABASE_URL: z.string().url(),
   QDRANT_URL: z.string().url(),
   QDRANT_API_KEY: z.string().optional(),
   OPENROUTER_BASE_URL: z.string().url().default('https://openrouter.ai/api/v1'),
@@ -17,7 +17,10 @@ const envSchema = z.object({
   OPENROUTER_REFERER: z.string().url().optional(),
   OPENROUTER_TITLE: z.string().optional(),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  JWT_EXPIRES_IN: z.string().default('7d').transform(val => val.split('#')[0]!.trim()),
+  JWT_EXPIRES_IN: z
+    .string()
+    .default('7d')
+    .transform((val) => val.split('#')[0]!.trim()),
   UNSTRUCTURED_API_URL: z
     .string()
     .url()

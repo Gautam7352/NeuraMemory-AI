@@ -32,7 +32,7 @@ export const chatRateLimiter = rateLimit({
   skipSuccessfulRequests: false,
   windowMs: chatWindowMs,
   max: chatMaxRequests,
-  keyGenerator: (req) => req.user?.userId ?? req.ip ?? 'unknown',
+  keyGenerator: (req) => req.user?.userId || 'unknown',
   message: {
     success: false,
     message: isDevelopmentLike

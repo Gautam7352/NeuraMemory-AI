@@ -238,7 +238,7 @@ list_environment_variables() {
   print_header "ENVIRONMENT VARIABLES"
 
   echo -e "${CYAN}Required Variables (Server-side):${NC}"
-  print_env_var "MONGODB_URI" "required"
+  print_env_var "DATABASE_URL" "required"
   print_env_var "QDRANT_URL" "required"
   print_env_var "OPENROUTER_API_KEY" "required"
   print_env_var "JWT_SECRET" "required"

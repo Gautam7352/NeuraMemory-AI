@@ -12,7 +12,7 @@ This is the backend server for NeuraMemory-AI, an AI-powered "second brain" know
 
 ### Data & AI
 
-- **Document Database**: [MongoDB](https://www.mongodb.com/) 7.x
+- **Relational Database**: [PostgreSQL](https://www.postgresql.org/) 16.x
 - **Vector Database**: [Qdrant](https://qdrant.tech/) (via `@qdrant/js-client-rest`)
 - **LLM Gateway**: [OpenRouter](https://openrouter.ai/) (via OpenAI SDK)
 
@@ -38,11 +38,11 @@ server/
 │   ├── config/          # Environment variable validation (Zod)
 │   ├── controllers/     # HTTP request handlers
 │   ├── services/        # Business logic layer
-│   ├── repositories/    # Data access layer (MongoDB, Qdrant)
+│   ├── repositories/    # Data access layer (PostgreSQL, Qdrant)
 │   ├── middleware/      # Error handling, auth, logging
 │   ├── types/           # TypeScript interfaces
 │   ├── utils/           # Helper functions
-│   ├── lib/             # Singleton clients (MongoDB, Qdrant, OpenRouter)
+│   ├── lib/             # Singleton clients (PostgreSQL, Qdrant, OpenRouter)
 │   └── index.ts         # Application entry point
 ├── docs/                # Documentation
 ├── test.sh              # API test suite
@@ -65,8 +65,8 @@ Create a `.env` file in the `server/` directory with the following variables:
 ### Required
 
 ```env
-# MongoDB Connection
-MONGODB_URI=mongodb://localhost:27017/neuramemory
+# PostgreSQL Connection
+DATABASE_URL=postgresql://localhost:5432/neuramemory
 
 # Qdrant Vector Database
 QDRANT_URL=http://localhost:6333
@@ -103,7 +103,7 @@ JWT_EXPIRES_IN=7d
 
 - Node.js ≥24.0.0
 - npm ≥10.0.0
-- MongoDB (local or remote)
+- PostgreSQL (local or remote)
 - Qdrant (local or remote)
 
 ### Installation
@@ -172,7 +172,7 @@ Register a new user account.
   "message": "Account created successfully.",
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
-    "id": "507f1f77bcf86cd799439011",
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "email": "user@example.com"
   }
 }
@@ -205,7 +205,7 @@ Authenticate an existing user.
   "message": "Login successful.",
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
-    "id": "507f1f77bcf86cd799439011",
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "email": "user@example.com"
   }
 }
@@ -238,13 +238,13 @@ The server includes a comprehensive test suite (`test.sh`) that validates all AP
 - `curl` - HTTP client
 - `jq` - JSON processor
 - Running server instance
-- Running MongoDB and Qdrant instances
+- Running PostgreSQL and Qdrant instances
 
 ### Run Tests
 
 ```bash
-# Start MongoDB and Qdrant (if using Docker Compose)
-docker compose up -d mongodb qdrant
+# Start PostgreSQL and Qdrant (if using Docker Compose)
+docker compose up -d postgres qdrant
 
 # Start the server
 npm run dev
@@ -298,7 +298,7 @@ docker build -t neuramemory-server .
 ```bash
 docker run -d \
   -p 3000:3000 \
-  -e MONGODB_URI=mongodb://host.docker.internal:27017/neuramemory \
+  -e DATABASE_URL=postgresql://host.docker.internal:5432/neuramemory \
   -e QDRANT_URL=http://host.docker.internal:6333 \
   -e OPENROUTER_API_KEY=your-key \
   -e JWT_SECRET=your-secret \
@@ -308,7 +308,7 @@ docker run -d \
 
 ### Docker Compose
 
-See the root `docker-compose.yml` for a complete stack setup including MongoDB, Qdrant, and the client application.
+See the root `docker-compose.yml` for a complete stack setup including PostgreSQL, Qdrant, and the client application.
 
 ## Architecture Highlights
 
@@ -317,7 +317,7 @@ See the root `docker-compose.yml` for a complete stack setup including MongoDB, 
 - **Validation**: Zod schemas for both environment variables and request payloads
 - **Error Handling**: Centralized error middleware with custom `AppError` class
 - **Security**: bcrypt password hashing, JWT authentication, user enumeration protection
-- **Database**: MongoDB unique indexes, Qdrant for vector search (upcoming)
+- **Database**: PostgreSQL with unique indexes, Qdrant for vector search
 - **Singleton Pattern**: Single instances of database clients reused across the app
 
 ## Current Implementation Status
@@ -325,7 +325,7 @@ See the root `docker-compose.yml` for a complete stack setup including MongoDB, 
 ### ✅ Completed
 
 - [x] Environment variable validation
-- [x] MongoDB connection and user repository
+- [x] PostgreSQL connection and user repository
 - [x] Authentication system (register/login)
 - [x] Password hashing with bcrypt
 - [x] JWT token generation and validation

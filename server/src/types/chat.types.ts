@@ -1,5 +1,3 @@
-import { ObjectId } from 'mongodb';
-
 export interface IMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -15,7 +13,7 @@ export interface IConversation {
 }
 
 export interface ConversationDocument extends IConversation {
-  _id: ObjectId;
+  id: string;
 }
 
 export interface SendMessageRequest {

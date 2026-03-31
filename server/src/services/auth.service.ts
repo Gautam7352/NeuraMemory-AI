@@ -73,7 +73,8 @@ function maskEmail(email: string): string {
   if (atIndex <= 0) return '[invalid-email]';
   const local = email.slice(0, atIndex);
   const domain = email.slice(atIndex); // includes the @
-  const masked = local.length <= 1 ? '*'.repeat(local.length) : `${local[0]}***`;
+  const masked =
+    local.length <= 1 ? '*'.repeat(local.length) : `${local[0]}***`;
   return `${masked}${domain}`;
 }
 
@@ -130,7 +131,7 @@ export async function registerService(
     const createdUser = await createUser(email, passwordHash);
 
     return buildAuthResponse('Account created successfully.', {
-      id: createdUser._id.toString(),
+      id: createdUser.id,
       email: createdUser.email,
     });
   } catch (err) {
@@ -167,7 +168,7 @@ export async function loginService(
     }
 
     return buildAuthResponse('Login successful.', {
-      id: existingUser._id.toString(),
+      id: existingUser.id,
       email: existingUser.email,
     });
   } catch (err) {
@@ -179,10 +180,12 @@ export async function loginService(
 /**
  * Generates a new API Key for the user.
  */
-export async function generateApiService(userId: string): Promise<{ apiKey: string }> {
+export async function generateApiService(
+  userId: string,
+): Promise<{ apiKey: string }> {
   // Generate a random 32-byte hex string and prefix it with nm_ (NeuraMemory)
   const apiKey = `nm_${crypto.randomBytes(32).toString('hex')}`;
-  
+
   await updateUserApiKey(userId, apiKey);
 
   return { apiKey };

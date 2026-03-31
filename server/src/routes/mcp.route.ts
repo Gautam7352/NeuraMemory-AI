@@ -19,6 +19,7 @@ import {
 } from '../services/memory.service.js';
 import { generateEmbeddings } from '../utils/embeddings.js';
 import type { Request, Response } from 'express';
+import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 
 const router = Router();
 
@@ -41,7 +42,7 @@ async function extractUser(req: Request): Promise<{ userId: string } | null> {
   const user = await findUserByApiKey(apiKey);
   if (!user) return null;
 
-  return { userId: user._id.toString() };
+  return { userId: user.id };
 }
 
 // ---------------------------------------------------------------------------
@@ -63,11 +64,16 @@ function createMcpServer(userId: string): McpServer {
       try {
         const response = await processPlainText({ text, userId });
         return {
-          content: [{ type: 'text' as const, text: JSON.stringify(response, null, 2) }],
+          content: [
+            { type: 'text' as const, text: JSON.stringify(response, null, 2) },
+          ],
         };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        return { isError: true, content: [{ type: 'text' as const, text: `Failed: ${msg}` }] };
+        return {
+          isError: true,
+          content: [{ type: 'text' as const, text: `Failed: ${msg}` }],
+        };
       }
     },
   );
@@ -81,11 +87,16 @@ function createMcpServer(userId: string): McpServer {
       try {
         const response = await processLink({ url, userId });
         return {
-          content: [{ type: 'text' as const, text: JSON.stringify(response, null, 2) }],
+          content: [
+            { type: 'text' as const, text: JSON.stringify(response, null, 2) },
+          ],
         };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        return { isError: true, content: [{ type: 'text' as const, text: `Failed: ${msg}` }] };
+        return {
+          isError: true,
+          content: [{ type: 'text' as const, text: `Failed: ${msg}` }],
+        };
       }
     },
   );
@@ -95,9 +106,20 @@ function createMcpServer(userId: string): McpServer {
     'get_memories',
     'Retrieve stored memories. Use "query" for semantic search, or leave empty to list all.',
     {
-      query: z.string().optional().describe('Optional search query for semantic retrieval'),
-      kind: z.enum(['semantic', 'bubble']).optional().describe('Filter by memory kind'),
-      limit: z.number().min(1).max(50).default(10).describe('Max memories to return'),
+      query: z
+        .string()
+        .optional()
+        .describe('Optional search query for semantic retrieval'),
+      kind: z
+        .enum(['semantic', 'bubble'])
+        .optional()
+        .describe('Filter by memory kind'),
+      limit: z
+        .number()
+        .min(1)
+        .max(50)
+        .default(10)
+        .describe('Max memories to return'),
     },
     async ({ query, kind, limit }) => {
       try {
@@ -105,22 +127,31 @@ function createMcpServer(userId: string): McpServer {
         if (query) {
           const [vector] = await generateEmbeddings([query]);
           if (!vector) throw new Error('Failed to generate embedding');
-          const { searchMemories } = await import('../repositories/memory.repository.js');
+          const { searchMemories } =
+            await import('../repositories/memory.repository.js');
           memories = await searchMemories(vector, userId, limit);
         } else {
-          const options: any = { limit };
-          if (kind) options.kind = kind;
+          const options: Record<string, unknown> = { limit };
+          if (kind) options[kind] = kind;
           memories = await getUserMemories(userId, options);
         }
-        const count = Array.isArray(memories) ? memories.length : memories.points.length;
+        const count = Array.isArray(memories)
+          ? memories.length
+          : memories.points.length;
         return {
           content: [
-            { type: 'text' as const, text: JSON.stringify({ count, memories }, null, 2) },
+            {
+              type: 'text' as const,
+              text: JSON.stringify({ count, memories }, null, 2),
+            },
           ],
         };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        return { isError: true, content: [{ type: 'text' as const, text: `Failed: ${msg}` }] };
+        return {
+          isError: true,
+          content: [{ type: 'text' as const, text: `Failed: ${msg}` }],
+        };
       }
     },
   );
@@ -160,7 +191,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   });
 
   const server = createMcpServer(auth.userId);
-  await server.connect(transport as any);
+  await server.connect(transport as Transport);
 
   // Set cleanup after connect (transport is fully initialized)
   transport.onclose = () => {

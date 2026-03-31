@@ -9,34 +9,34 @@ NeuraMemory AI is an open-source, high-performance memory engine designed to giv
 Currently, interacting with AI feels like meeting a brilliant person who gets a concussion every time you close the chat window. This creates three critical failures in the developer and user experience:
 
 1. **The Context Window "Token Tax"**  
-Every time you start a new session, you have to re-feed the AI your project structure, coding preferences, or personal history. This wastes thousands of tokens and real money on redundant processing. Current context windows are growing, but they are still a "leaky bucket". Once the limit is reached, the oldest (and often most important) context is discarded.
+   Every time you start a new session, you have to re-feed the AI your project structure, coding preferences, or personal history. This wastes thousands of tokens and real money on redundant processing. Current context windows are growing, but they are still a "leaky bucket". Once the limit is reached, the oldest (and often most important) context is discarded.
 
 2. **The Model Silo Problem**  
-Your "relationship" with an AI is trapped inside a single platform. If you move from Gemini to Claude or a local Llama model, you lose all previous context. There is no interoperable layer for personal or professional AI memory.
+   Your "relationship" with an AI is trapped inside a single platform. If you move from Gemini to Claude or a local Llama model, you lose all previous context. There is no interoperable layer for personal or professional AI memory.
 
 3. **The "Grounding" Gap**  
-Generic LLMs lack "Personal Grounding." They know how to write code, but they don't know your specific project's architectural quirks unless you explicitly tell them every single time.
+   Generic LLMs lack "Personal Grounding." They know how to write code, but they don't know your specific project's architectural quirks unless you explicitly tell them every single time.
 
 ## What NeuraMemory-AI Solves
 
-1. **Massive Token Efficiency**  
-By using Retrieval-Augmented Generation (RAG) specifically for personal history, NeuraMemory can represent years of interaction in just a few hundred tokens. It solves the "Lost-in-the-Middle" phenomenon by ensuring only the most semantically relevant data is placed in the LLM's "Working Memory."
+1.  **Massive Token Efficiency**  
+    By using Retrieval-Augmented Generation (RAG) specifically for personal history, NeuraMemory can represent years of interaction in just a few hundred tokens. It solves the "Lost-in-the-Middle" phenomenon by ensuring only the most semantically relevant data is placed in the LLM's "Working Memory."
 
-2. **User-Centric Sovereignty**  
-In a world where big tech companies want to own your "digital twin," NeuraMemory is Local-First. You own your memory database. It can be hosted on your local machine or a private server, ensuring that your "Personal Context" never becomes someone else's training data.
+2.  **User-Centric Sovereignty**  
+    In a world where big tech companies want to own your "digital twin," NeuraMemory is Local-First. You own your memory database. It can be hosted on your local machine or a private server, ensuring that your "Personal Context" never becomes someone else's training data.
 
-3. **Model Agnosticism**  
-NeuraMemory is designed with a Universal API. Whether you are using a Go-based backend, a React frontend, or a CLI tool, you can hook into the same memory stream. It bridges the gap between different AI providers, making your personal context portable.
+3.  **Model Agnosticism**  
+    NeuraMemory is designed with a Universal API. Whether you are using a Go-based backend, a React frontend, or a CLI tool, you can hook into the same memory stream. It bridges the gap between different AI providers, making your personal context portable.
 
-4. **Hierarchical Memory Management**  
-Unlike simple databases, NeuraMemory distinguishes between:
+4.  **Hierarchical Memory Management**  
+    Unlike simple databases, NeuraMemory distinguishes between:
 
-    - **Episodic Memory:**  
-     Specific events (e.g., "We fixed the bug in the auth controller yesterday").
-    - **Semantic Memory:**  
-    General facts (e.g., "I prefer using functional programming patterns in TypeScript").
-    - **Procedural Memory:**  
-    How you like things done (e.g., "Always use snake_case for database schemas").
+        - **Episodic Memory:**
+         Specific events (e.g., "We fixed the bug in the auth controller yesterday").
+        - **Semantic Memory:**
+        General facts (e.g., "I prefer using functional programming patterns in TypeScript").
+        - **Procedural Memory:**
+        How you like things done (e.g., "Always use snake_case for database schemas").
 
 ## Key Features
 
@@ -151,8 +151,8 @@ cp client/.env.example client/.env.production
 - Processing: Firecrawl, pdfjs-dist, document parsers, local OCR fallback
 - Tooling: ESLint, Prettier, Vitest, Docker Compose
 
-
 ## Future prospects:
+
 - To build our own "memory database" to make sure we are able to have custom architecture for this specific purpose
 - To improve to code for any inefficiencies in terms of modularity and the way we handle things
 - To ensure generic and custom support for as many platforms and IDEs as possible.

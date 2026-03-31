@@ -9,10 +9,8 @@ services:
       - ./server/.env
     environment:
       - NODE_ENV=production
-      - MONGODB_URI=mongodb://mongodb:27017/neuramemory
-      - QDRANT_URL=http://qdrant:6333
     depends_on:
-      - mongodb
+      - postgres
       - qdrant
     ports:
       - "3000:3000"
@@ -32,18 +30,23 @@ services:
     networks:
       - neuramemory-network
 
-  mongodb:
-    image: mongo:latest
-    container_name: neuramemory-mongodb
+  postgres:
+    image: postgres:16-alpine
+    container_name: neuramemory-postgres
     restart: unless-stopped
+    environment:
+      POSTGRES_USER: neuramemory
+      POSTGRES_PASSWORD: neuramemory
+      POSTGRES_DB: neuramemory
     ports:
-      - "27017:27017"
+      - "5432:5432"
     volumes:
-      - mongodb_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
     networks:
       - neuramemory-network
     healthcheck:
-      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      test: [ "CMD-SHELL", "pg_isready -U neuramemory" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -68,7 +71,7 @@ services:
       start_period: 10s
 
 volumes:
-  mongodb_data:
+  postgres_data:
     driver: local
   qdrant_data:
     driver: local

@@ -4,10 +4,13 @@ import {
   logoutController,
   meController,
   registerController,
-  generateApiKeyController
+  generateApiKeyController,
 } from '../controllers/auth.controller.js';
 import { requireAuth } from '../middleware/auth/requireAuth.js';
-import { loginRateLimiter, registerRateLimiter } from '../middleware/rateLimit.js';
+import {
+  loginRateLimiter,
+  registerRateLimiter,
+} from '../middleware/rateLimit.js';
 
 const router = Router();
 

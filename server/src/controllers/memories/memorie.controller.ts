@@ -129,7 +129,7 @@ export async function getMemories(
     const sourceRaw = req.query['source'];
     const source: MemorySource | undefined =
       typeof sourceRaw === 'string' &&
-        ['text', 'document', 'link'].includes(sourceRaw)
+      ['text', 'document', 'link'].includes(sourceRaw)
         ? (sourceRaw as MemorySource)
         : undefined;
 
@@ -139,9 +139,15 @@ export async function getMemories(
         ? Math.min(Math.max(Number(limitRaw), 1), 500)
         : 100;
 
-    const offset = typeof req.query['offset'] === 'string' ? req.query['offset'] : null;
+    const offset =
+      typeof req.query['offset'] === 'string' ? req.query['offset'] : null;
 
-    const options: { kind?: string; source?: MemorySource; limit?: number; offset?: string | null } = {
+    const options: {
+      kind?: string;
+      source?: MemorySource;
+      limit?: number;
+      offset?: string | null;
+    } = {
       limit,
     };
     if (kind !== undefined) options.kind = kind;

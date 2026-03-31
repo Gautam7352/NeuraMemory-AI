@@ -147,8 +147,16 @@ export async function searchMemories(
  */
 export async function getMemoriesByUser(
   userId: string,
-  options?: { kind?: string; source?: MemorySource; limit?: number; offset?: string | null },
-): Promise<{ points: (StoredMemoryPayload & { id: string })[]; nextOffset: string | null }> {
+  options?: {
+    kind?: string;
+    source?: MemorySource;
+    limit?: number;
+    offset?: string | null;
+  },
+): Promise<{
+  points: (StoredMemoryPayload & { id: string })[];
+  nextOffset: string | null;
+}> {
   await ensureCollection();
   const client = getQdrantClient();
 
@@ -176,7 +184,9 @@ export async function getMemoriesByUser(
       id: String(p.id),
       ...(p.payload as unknown as StoredMemoryPayload),
     })),
-    nextOffset: results.next_page_offset ? String(results.next_page_offset) : null,
+    nextOffset: results.next_page_offset
+      ? String(results.next_page_offset)
+      : null,
   };
 }
 

@@ -64,7 +64,6 @@ export function requireAuth(
 
     req.user = payload;
     next();
-
   } catch (err) {
     if (err instanceof AppError) {
       next(err);
@@ -81,6 +80,8 @@ export function requireAuth(
       return;
     }
 
-    next(new AppError(401, 'Authentication failed. Please provide a valid token.'));
+    next(
+      new AppError(401, 'Authentication failed. Please provide a valid token.'),
+    );
   }
 }

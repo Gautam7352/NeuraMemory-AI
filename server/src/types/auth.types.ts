@@ -1,11 +1,21 @@
-import { ObjectId } from 'mongodb';
-
 export interface IUser {
   email: string;
   passwordHash: string;
   apiKey?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/**
+ * Raw row shape returned by PostgreSQL queries on the `users` table.
+ */
+export interface UserRow {
+  id: string;
+  email: string;
+  password_hash: string;
+  api_key: string | null;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface AuthPayload {
@@ -24,5 +34,5 @@ export interface AuthResponse {
 }
 
 export interface UserDocument extends IUser {
-  _id: ObjectId;
+  id: string;
 }

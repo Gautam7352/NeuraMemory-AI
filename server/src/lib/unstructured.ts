@@ -53,7 +53,11 @@ export async function extractTextWithUnstructured(
   }
 
   const resolvedMimetype = mimetype ?? mimetypeFromFilename(filename);
-  const { jobId } = await submitUnstructuredJob(buffer, filename, resolvedMimetype);
+  const { jobId } = await submitUnstructuredJob(
+    buffer,
+    filename,
+    resolvedMimetype,
+  );
   const job = await pollUnstructuredJob(jobId);
 
   if (job.status !== 'COMPLETED') {

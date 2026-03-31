@@ -99,6 +99,7 @@ export async function registerController(
     });
 
     const { token: _token, ...safeResponse } = response;
+    void _token; // Mark as used to satisfy lint
     res.status(201).json(safeResponse);
   } catch (err) {
     next(err);
@@ -154,7 +155,7 @@ export async function meController(
     if (!userId) {
       throw new AppError(401, 'Unauthorized');
     }
-    
+
     // We can just import and use findUserById from repository
     const { findUserById } = await import('../repositories/user.repository.js');
     const user = await findUserById(userId);

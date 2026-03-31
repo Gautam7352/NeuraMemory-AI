@@ -60,7 +60,7 @@ export async function sendMessage(
 
   // e. Get or create conversation
   const conversation = await getOrCreateConversation(userId);
-  const conversationId = conversation._id;
+  const conversationId = conversation.id;
 
   // f. Truncation is handled by appendMessages — use last 20 messages for context
   const recentMessages = conversation.messages.slice(-20);
@@ -100,7 +100,7 @@ export async function sendMessage(
   await appendMessages(conversationId, userMsg, assistantMsg);
 
   // j. Return
-  return { reply: assistantContent, conversationId: conversationId.toString() };
+  return { reply: assistantContent, conversationId };
 }
 
 /**
@@ -117,7 +117,7 @@ export async function getChatHistory(
 
   return {
     messages: conversation.messages,
-    conversationId: conversation._id.toString(),
+    conversationId: conversation.id,
   };
 }
 

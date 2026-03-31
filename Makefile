@@ -1,7 +1,7 @@
 # NeuraMemory-AI Makefile
 # Shortcuts for common Docker Compose and development commands
 
-.PHONY: help build up down restart logs ps clean test dev dev-down prod-build prod-up prod-down dev-logs prod-logs shell-server shell-mongo backup
+.PHONY: help build up down restart logs ps clean test dev dev-down prod-build prod-up prod-down dev-logs prod-logs shell-server shell-postgres backup
 
 # Default target
 .DEFAULT_GOAL := help
@@ -61,17 +61,17 @@ dev-logs-client: ## View client logs only
 
 ##@ Database Management
 
-db-start: ## Start only MongoDB and Qdrant
-	docker compose $(COMPOSE_FILES) up -d mongodb qdrant
+db-start: ## Start only PostgreSQL and Qdrant
+	docker compose $(COMPOSE_FILES) up -d postgres qdrant
 
-db-stop: ## Stop MongoDB and Qdrant
-	docker compose $(COMPOSE_FILES) stop mongodb qdrant
+db-stop: ## Stop PostgreSQL and Qdrant
+	docker compose $(COMPOSE_FILES) stop postgres qdrant
 
 db-logs: ## View database logs
-	docker compose $(COMPOSE_FILES) logs -f mongodb qdrant
+	docker compose $(COMPOSE_FILES) logs -f postgres qdrant
 
-mongo-shell: ## Open MongoDB shell
-	docker compose $(COMPOSE_FILES) exec mongodb mongosh
+psql-shell: ## Open PostgreSQL shell
+	docker compose $(COMPOSE_FILES) exec postgres psql -U neuramemory
 
 qdrant-health: ## Check Qdrant health
 	@curl -s http://localhost:6333/health | jq '.'
@@ -98,8 +98,8 @@ build-server: ## Build TypeScript (check for errors)
 shell-server: ## Open shell in server container
 	docker compose $(COMPOSE_FILES) exec server sh
 
-shell-mongo: ## Open shell in MongoDB container
-	docker compose $(COMPOSE_FILES) exec mongodb sh
+shell-postgres: ## Open shell in PostgreSQL container
+	docker compose $(COMPOSE_FILES) exec postgres sh
 
 shell-qdrant: ## Open shell in Qdrant container
 	docker compose $(COMPOSE_FILES) exec qdrant sh
@@ -116,7 +116,7 @@ clean: ## Stop and remove all containers
 	docker compose $(COMPOSE_FILES) down
 
 clean-volumes: ## Stop and remove containers + volumes (⚠️  deletes data)
-	@echo "⚠️  WARNING: This will delete all data in MongoDB and Qdrant!"
+	@echo "⚠️  WARNING: This will delete all data in PostgreSQL and Qdrant!"
 	@read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
@@ -137,20 +137,20 @@ prune: ## Remove unused Docker resources
 
 ##@ Backup & Restore
 
-backup-mongo: ## Backup MongoDB to backups/ directory
+backup-postgres: ## Backup PostgreSQL to backups/ directory
 	@mkdir -p backups
-	@echo "Creating MongoDB backup..."
-	@docker compose $(COMPOSE_FILES) exec -T mongodb mongodump --archive > backups/mongodb_$$(date +%Y%m%d_%H%M%S).archive
-	@echo "✓ Backup complete: backups/mongodb_$$(date +%Y%m%d_%H%M%S).archive"
+	@echo "Creating PostgreSQL backup..."
+	@docker compose $(COMPOSE_FILES) exec -T postgres pg_dump -U neuramemory neuramemory > backups/postgres_$$(date +%Y%m%d_%H%M%S).sql
+	@echo "✓ Backup complete: backups/postgres_$$(date +%Y%m%d_%H%M%S).sql"
 
-restore-mongo: ## Restore MongoDB from latest backup
-	@LATEST=$$(ls -t backups/mongodb_*.archive 2>/dev/null | head -1); \
+restore-postgres: ## Restore PostgreSQL from latest backup
+	@LATEST=$$(ls -t backups/postgres_*.sql 2>/dev/null | head -1); \
 	if [ -z "$$LATEST" ]; then \
 		echo "❌ No backup files found in backups/"; \
 		exit 1; \
 	fi; \
 	echo "Restoring from $$LATEST..."; \
-	docker compose $(COMPOSE_FILES) exec -T mongodb mongorestore --archive < $$LATEST; \
+	docker compose $(COMPOSE_FILES) exec -T postgres psql -U neuramemory neuramemory < $$LATEST; \
 	echo "✓ Restore complete"
 
 ##@ Quick Actions
@@ -187,7 +187,7 @@ endpoints: ## Show service endpoints
 	@echo "  Frontend:     http://localhost:5173"
 	@echo "  API:          http://localhost:3000"
 	@echo "  API Docs:     http://localhost:3000/api/v1"
-	@echo "  MongoDB:      mongodb://localhost:27017"
+	@echo "  PostgreSQL:   postgresql://localhost:5432"
 	@echo "  Qdrant:       http://localhost:6333"
 	@echo "  Qdrant UI:    http://localhost:6333/dashboard"
 	@echo ""
@@ -201,7 +201,7 @@ check-env: ## Verify required environment variables
 	fi
 	@echo "✓ server/.env exists"
 	@cd server && node -e "require('dotenv').config(); \
-		const required = ['MONGODB_URI', 'QDRANT_URL', 'OPENROUTER_API_KEY', 'JWT_SECRET']; \
+		const required = ['DATABASE_URL', 'QDRANT_URL', 'OPENROUTER_API_KEY', 'JWT_SECRET']; \
 		let missing = []; \
 		required.forEach(key => { if (!process.env[key]) missing.push(key); }); \
 		if (missing.length > 0) { \

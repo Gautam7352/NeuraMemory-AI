@@ -8,8 +8,8 @@ import authRouter from './routes/auth.route.js';
 import memoryRouter from './routes/memorie.route.js';
 import swaggerSpec from './config/swagger.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import { ensureUserIndexes } from './repositories/user.repository.js';
-import { getMongoClient } from './lib/mongodb.js';
+import { ensureDatabaseSchema } from './repositories/user.repository.js';
+import { closePool } from './lib/postgres.js';
 import mcpRouter from './routes/mcp.route.js';
 import healthRouter from './routes/health.route.js';
 import chatRouter from './routes/chat.route.js';
@@ -21,7 +21,9 @@ app.use(cookieParser());
 app.use(express.json({ limit: '200kb' }));
 
 // cors
-const allowedOrigins = env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean);
+const allowedOrigins = env.ALLOWED_ORIGINS.split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
@@ -29,7 +31,7 @@ app.use(
       // allow server-to-server / curl requests (no origin header)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
-      
+
       console.warn(`[CORS] Rejected Origin: ${origin}`);
       callback(new Error(`CORS: origin ${origin} not allowed`));
     },
@@ -107,15 +109,13 @@ async function shutdown(signal: string): Promise<void> {
       console.log('[Shutdown] HTTP server closed.');
     }
 
-    // Close MongoDB client if initialized
+    // Close PostgreSQL pool if initialized
     try {
-      const client = await getMongoClient();
-      await client.close();
-      console.log('[Shutdown] MongoDB client closed.');
+      await closePool();
+      console.log('[Shutdown] PostgreSQL pool closed.');
     } catch {
-      // getMongoClient() may fail if never initialized / env issues; ignore on shutdown
       console.log(
-        '[Shutdown] MongoDB client was not initialized or already closed.',
+        '[Shutdown] PostgreSQL pool was not initialized or already closed.',
       );
     }
 
@@ -124,7 +124,9 @@ async function shutdown(signal: string): Promise<void> {
       closeQdrantClient();
       console.log('[Shutdown] Qdrant client closed.');
     } catch {
-      console.log('[Shutdown] Qdrant client was not initialized or already closed.');
+      console.log(
+        '[Shutdown] Qdrant client was not initialized or already closed.',
+      );
     }
 
     console.log('[Shutdown] Completed successfully.');
@@ -157,9 +159,9 @@ function registerProcessHandlers(): void {
 async function main(): Promise<void> {
   logStartupBanner();
 
-  // Ensure DB indexes are ready before serving traffic
-  await ensureUserIndexes();
-  console.log('[Startup] Database indexes verified.');
+  // Ensure database schema is ready before serving traffic
+  await ensureDatabaseSchema();
+  console.log('[Startup] Database schema verified.');
 
   // Verify Qdrant connectivity
   try {
@@ -167,7 +169,10 @@ async function main(): Promise<void> {
     await qdrant.getCollections();
     console.log('[Startup] Qdrant connectivity verified.');
   } catch (err) {
-    console.error('[Startup] WARNING: Qdrant is unreachable. Memory operations will fail.', err);
+    console.error(
+      '[Startup] WARNING: Qdrant is unreachable. Memory operations will fail.',
+      err,
+    );
   }
 
   const port = Number(env.PORT);

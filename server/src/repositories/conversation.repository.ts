@@ -1,42 +1,17 @@
 /**
- * Conversation repository — all MongoDB operations for chat conversations.
+ * Conversation repository — all PostgreSQL operations for chat conversations.
  *
  * Responsibilities:
- *  - Ensure indexes exist (auto-create on first use)
  *  - Get or create a conversation for a user
  *  - Append messages to a conversation (with 200-message cap)
  *  - Retrieve the latest conversation for a user
  *  - Clear messages from a conversation
  */
 
-import { ObjectId } from 'mongodb';
-import { getDb } from '../lib/mongodb.js';
+import { query } from '../lib/postgres.js';
 import type { ConversationDocument, IMessage } from '../types/chat.types.js';
 
-const COLLECTION_NAME = 'conversations';
 const MAX_MESSAGES = 200;
-
-let indexesReady = false;
-
-// ---------------------------------------------------------------------------
-// Index bootstrap
-// ---------------------------------------------------------------------------
-
-/**
- * Ensures MongoDB indexes exist on the conversations collection.
- * Called lazily on first use.
- */
-async function ensureIndexes(): Promise<void> {
-  if (indexesReady) return;
-
-  const db = await getDb();
-  const col = db.collection<ConversationDocument>(COLLECTION_NAME);
-
-  await col.createIndex({ userId: 1 });
-  await col.createIndex({ userId: 1, updatedAt: -1 });
-
-  indexesReady = true;
-}
 
 // ---------------------------------------------------------------------------
 // Read operations
@@ -48,11 +23,16 @@ async function ensureIndexes(): Promise<void> {
 export async function getLatestConversation(
   userId: string,
 ): Promise<ConversationDocument | null> {
-  await ensureIndexes();
-  const db = await getDb();
-  const col = db.collection<ConversationDocument>(COLLECTION_NAME);
+  const result = await query<ConversationDocument>(
+    `SELECT id, user_id as "userId", title, messages, created_at as "createdAt", updated_at as "updatedAt"
+     FROM conversations
+     WHERE user_id = $1
+     ORDER BY updated_at DESC
+     LIMIT 1`,
+    [userId],
+  );
 
-  return col.findOne({ userId }, { sort: { updatedAt: -1 } });
+  return result.rows[0] || null;
 }
 
 // ---------------------------------------------------------------------------
@@ -66,26 +46,17 @@ export async function getLatestConversation(
 export async function getOrCreateConversation(
   userId: string,
 ): Promise<ConversationDocument> {
-  await ensureIndexes();
-
   const existing = await getLatestConversation(userId);
   if (existing) return existing;
 
-  const db = await getDb();
-  const col = db.collection<ConversationDocument>(COLLECTION_NAME);
+  const result = await query<ConversationDocument>(
+    `INSERT INTO conversations (user_id, title, messages)
+     VALUES ($1, $2, '[]'::jsonb)
+     RETURNING id, user_id as "userId", title, messages, created_at as "createdAt", updated_at as "updatedAt"`,
+    [userId, 'New Conversation'],
+  );
 
-  const now = new Date();
-  const doc: Omit<ConversationDocument, '_id'> = {
-    userId,
-    title: 'New Conversation',
-    messages: [],
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  const result = await col.insertOne(doc as ConversationDocument);
-
-  return { ...doc, _id: result.insertedId };
+  return result.rows[0] as ConversationDocument;
 }
 
 /**
@@ -94,45 +65,34 @@ export async function getOrCreateConversation(
  * are truncated so the total stays at or below 200 after appending.
  */
 export async function appendMessages(
-  conversationId: ObjectId,
+  conversationId: string,
   userMsg: IMessage,
   assistantMsg: IMessage,
 ): Promise<void> {
-  await ensureIndexes();
-  const db = await getDb();
-  const col = db.collection<ConversationDocument>(COLLECTION_NAME);
-
-  // Fetch current message count to decide whether truncation is needed
-  const conversation = await col.findOne(
-    { _id: conversationId },
-    { projection: { 'messages': 1 } },
+  // First, get the current messages
+  const currentResult = await query<{ messages: IMessage[] }>(
+    `SELECT messages FROM conversations WHERE id = $1`,
+    [conversationId],
   );
 
-  if (!conversation) return;
+  if (currentResult.rowCount === 0) return;
 
-  const currentCount = conversation.messages.length;
-  const now = new Date();
+  let messages = currentResult.rows[0]?.messages || [];
 
-  if (currentCount >= MAX_MESSAGES - 1) {
-    // Slice to keep only the most recent (MAX_MESSAGES - 2) messages,
-    // then append both new messages to land at exactly MAX_MESSAGES.
-    const keepFrom = currentCount - (MAX_MESSAGES - 2);
-    const trimmedMessages = conversation.messages.slice(keepFrom);
-    trimmedMessages.push(userMsg, assistantMsg);
-
-    await col.updateOne(
-      { _id: conversationId },
-      { $set: { messages: trimmedMessages, updatedAt: now } },
-    );
-  } else {
-    await col.updateOne(
-      { _id: conversationId },
-      {
-        $push: { messages: { $each: [userMsg, assistantMsg] } },
-        $set: { updatedAt: now },
-      },
-    );
+  // Truncate if we are exceeding MAX_MESSAGES
+  if (messages.length >= MAX_MESSAGES - 1) {
+    const keepFrom = messages.length - (MAX_MESSAGES - 2);
+    messages = messages.slice(keepFrom);
   }
+
+  messages.push(userMsg, assistantMsg);
+
+  await query(
+    `UPDATE conversations 
+     SET messages = $1::jsonb, updated_at = now()
+     WHERE id = $2`,
+    [JSON.stringify(messages), conversationId],
+  );
 }
 
 /**
@@ -140,13 +100,16 @@ export async function appendMessages(
  * most recent conversation.
  */
 export async function clearConversationMessages(userId: string): Promise<void> {
-  await ensureIndexes();
-  const db = await getDb();
-  const col = db.collection<ConversationDocument>(COLLECTION_NAME);
-
-  await col.findOneAndUpdate(
-    { userId },
-    { $set: { messages: [], updatedAt: new Date() } },
-    { sort: { updatedAt: -1 } },
+  // Update the latest conversation for the user
+  await query(
+    `UPDATE conversations 
+     SET messages = '[]'::jsonb, updated_at = now()
+     WHERE id = (
+       SELECT id FROM conversations
+       WHERE user_id = $1
+       ORDER BY updated_at DESC
+       LIMIT 1
+     )`,
+    [userId],
   );
 }

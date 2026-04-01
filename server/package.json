@@ -60,6 +60,7 @@
     "pdfjs-dist": "^4.6.82",
     "pg": "^8.20.0",
     "swagger-ui-express": "^5.0.1",
+    "winston": "^3.19.0",
     "zod": "^3.23.8"
   }
 }

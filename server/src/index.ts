@@ -14,6 +14,7 @@ import mcpRouter from './routes/mcp.route.js';
 import healthRouter from './routes/health.route.js';
 import chatRouter from './routes/chat.route.js';
 import { getQdrantClient, closeQdrantClient } from './lib/qdrant.js';
+import { logger } from './utils/logger.js';
 
 const app = express();
 app.use(helmet());
@@ -32,7 +33,7 @@ app.use(
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
 
-      console.warn(`[CORS] Rejected Origin: ${origin}`);
+      logger.warn(`[CORS] Rejected Origin: ${origin}`);
       callback(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,
@@ -67,29 +68,29 @@ let server: ReturnType<typeof app.listen> | null = null;
 let isShuttingDown = false;
 
 function logStartupBanner(): void {
-  console.log('==================================================');
-  console.log('🚀 NeuraMemory-AI Server Starting');
-  console.log(`• Node Version: ${process.version}`);
-  console.log(`• Environment : ${env.NODE_ENV}`);
-  console.log(`• Port        : ${env.PORT}`);
-  console.log(`• PID         : ${process.pid}`);
-  console.log(`• Started At  : ${new Date().toISOString()}`);
-  console.log('==================================================');
+  logger.info('==================================================');
+  logger.info('🚀 NeuraMemory-AI Server Starting');
+  logger.info(`• Node Version: ${process.version}`);
+  logger.info(`• Environment : ${env.NODE_ENV}`);
+  logger.info(`• Port        : ${env.PORT}`);
+  logger.info(`• PID         : ${process.pid}`);
+  logger.info(`• Started At  : ${new Date().toISOString()}`);
+  logger.info('==================================================');
 }
 
 async function shutdown(signal: string): Promise<void> {
   if (isShuttingDown) {
-    console.warn(
+    logger.warn(
       `[Shutdown] Already in progress. Received additional signal: ${signal}`,
     );
     return;
   }
 
   isShuttingDown = true;
-  console.log(`[Shutdown] Received ${signal}. Starting graceful shutdown...`);
+  logger.info(`[Shutdown] Received ${signal}. Starting graceful shutdown...`);
 
   const hardTimeout = setTimeout(() => {
-    console.error('[Shutdown] Forced exit after timeout.');
+    logger.error('[Shutdown] Forced exit after timeout.');
     process.exit(1);
   }, 10_000);
   hardTimeout.unref();
@@ -106,15 +107,15 @@ async function shutdown(signal: string): Promise<void> {
           resolve();
         });
       });
-      console.log('[Shutdown] HTTP server closed.');
+      logger.info('[Shutdown] HTTP server closed.');
     }
 
     // Close PostgreSQL pool if initialized
     try {
       await closePool();
-      console.log('[Shutdown] PostgreSQL pool closed.');
+      logger.info('[Shutdown] PostgreSQL pool closed.');
     } catch {
-      console.log(
+      logger.info(
         '[Shutdown] PostgreSQL pool was not initialized or already closed.',
       );
     }
@@ -122,17 +123,17 @@ async function shutdown(signal: string): Promise<void> {
     // Close Qdrant client
     try {
       closeQdrantClient();
-      console.log('[Shutdown] Qdrant client closed.');
+      logger.info('[Shutdown] Qdrant client closed.');
     } catch {
-      console.log(
+      logger.info(
         '[Shutdown] Qdrant client was not initialized or already closed.',
       );
     }
 
-    console.log('[Shutdown] Completed successfully.');
+    logger.info('[Shutdown] Completed successfully.');
     process.exit(0);
   } catch (err) {
-    console.error('[Shutdown] Error during graceful shutdown:', err);
+    logger.error('[Shutdown] Error during graceful shutdown:', { error: err });
     process.exit(1);
   }
 }
@@ -147,11 +148,11 @@ function registerProcessHandlers(): void {
   });
 
   process.on('unhandledRejection', (reason) => {
-    console.error('[Process] Unhandled promise rejection:', reason);
+    logger.error('[Process] Unhandled promise rejection:', { error: reason });
   });
 
   process.on('uncaughtException', (err) => {
-    console.error('[Process] Uncaught exception:', err);
+    logger.error('[Process] Uncaught exception:', { error: err });
     void shutdown('uncaughtException');
   });
 }
@@ -161,30 +162,30 @@ async function main(): Promise<void> {
 
   // Ensure database schema is ready before serving traffic
   await ensureDatabaseSchema();
-  console.log('[Startup] Database schema verified.');
+  logger.info('[Startup] Database schema verified.');
 
   // Verify Qdrant connectivity
   try {
     const qdrant = getQdrantClient();
     await qdrant.getCollections();
-    console.log('[Startup] Qdrant connectivity verified.');
+    logger.info('[Startup] Qdrant connectivity verified.');
   } catch (err) {
-    console.error(
+    logger.error(
       '[Startup] WARNING: Qdrant is unreachable. Memory operations will fail.',
-      err,
+      { error: err },
     );
   }
 
   const port = Number(env.PORT);
 
   server = app.listen(port, () => {
-    console.log(`[Startup] Server is listening on port ${port}`);
+    logger.info(`[Startup] Server is listening on port ${port}`);
   });
 }
 
 registerProcessHandlers();
 
 main().catch((err) => {
-  console.error('[Startup] Fatal error during initialization:', err);
+  logger.error('[Startup] Fatal error during initialization:', { error: err });
   process.exit(1);
 });

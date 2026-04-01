@@ -28,8 +28,15 @@ const allowedOrigins = env.ALLOWED_ORIGINS.split(',')
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow server-to-server / curl requests (no origin header)
-      if (!origin) return callback(null, true);
+      // allow server-to-server / curl requests in development, reject in production
+      if (!origin) {
+        if (env.NODE_ENV !== 'production') {
+          return callback(null, true);
+        }
+        console.warn(`[CORS] Rejected Missing Origin in production`);
+        return callback(new Error(`CORS: missing origin not allowed`));
+      }
+
       if (allowedOrigins.includes(origin)) return callback(null, true);
 
       console.warn(`[CORS] Rejected Origin: ${origin}`);
@@ -184,7 +191,12 @@ async function main(): Promise<void> {
 
 registerProcessHandlers();
 
-main().catch((err) => {
-  console.error('[Startup] Fatal error during initialization:', err);
-  process.exit(1);
-});
+// Only start the server if this file is the entry point
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error('[Startup] Fatal error during initialization:', err);
+    process.exit(1);
+  });
+}
+
+export { app };

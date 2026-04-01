@@ -1,4 +1,4 @@
-import { generateEmbedding } from '../utils/embeddings.js';
+import { generateEmbeddings } from '../utils/embeddings.js';
 import { searchMemories } from '../repositories/memory.repository.js';
 import {
   getOrCreateConversation,
@@ -50,7 +50,10 @@ export async function sendMessage(
   }
 
   // b. Embed
-  const vector = await generateEmbedding(message);
+  const [vector] = await generateEmbeddings([message]);
+  if (!vector) {
+    throw new AppError(500, 'Embedding generation returned no result.');
+  }
 
   // c. Retrieve top 5 memories
   const memories = await searchMemories(vector, userId, 5);

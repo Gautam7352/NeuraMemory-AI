@@ -33,15 +33,9 @@ export async function createFromText(
   try {
     const userId = getAuthUserId(req);
 
-    const result = plainTextSchema.safeParse(req.body);
-    if (!result.success) {
-      throw new AppError(
-        400,
-        result.error.errors[0]?.message ?? 'Invalid input.',
-      );
-    }
+    const { text } = plainTextSchema.parse(req.body);
 
-    const response = await processPlainText({ text: result.data.text, userId });
+    const response = await processPlainText({ text: text, userId });
     res.status(201).json(response);
   } catch (err) {
     next(err);
@@ -56,15 +50,9 @@ export async function createFromLink(
   try {
     const userId = getAuthUserId(req);
 
-    const result = linkSchema.safeParse(req.body);
-    if (!result.success) {
-      throw new AppError(
-        400,
-        result.error.errors[0]?.message ?? 'Invalid input.',
-      );
-    }
+    const { url } = linkSchema.parse(req.body);
 
-    const response = await processLink({ url: result.data.url, userId });
+    const response = await processLink({ url: url, userId });
     res.status(201).json(response);
   } catch (err) {
     next(err);
@@ -215,13 +203,7 @@ export async function updateMemoryById(
   try {
     const userId = getAuthUserId(req);
 
-    const result = plainTextSchema.safeParse(req.body);
-    if (!result.success) {
-      throw new AppError(
-        400,
-        result.error.errors[0]?.message ?? 'Invalid input.',
-      );
-    }
+    const { text } = plainTextSchema.parse(req.body);
 
     const pointId = Array.isArray(req.params['id'])
       ? req.params['id'][0]
@@ -230,7 +212,7 @@ export async function updateMemoryById(
       throw new AppError(400, 'Memory ID is required.');
     }
 
-    await updateMemoryByIdService(userId, pointId, result.data.text);
+    await updateMemoryByIdService(userId, pointId, text);
     res.status(200).json({ success: true, message: 'Memory updated.' });
   } catch (err) {
     next(err);

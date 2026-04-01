@@ -72,18 +72,17 @@ export async function extractTextWithUnstructured(
     throw new AppError(502, 'Unstructured OCR produced no output files.');
   }
 
-  const texts: string[] = [];
-  for (const target of fileTargets) {
+  const downloadPromises = fileTargets.map(async (target) => {
     const output = await downloadUnstructuredOutput(
       jobId,
       target.fileId,
       target.nodeId,
     );
-    const extracted = extractTextFromUnstructuredOutput(output);
-    if (extracted) {
-      texts.push(extracted);
-    }
-  }
+    return extractTextFromUnstructuredOutput(output);
+  });
+
+  const extractedTexts = await Promise.all(downloadPromises);
+  const texts = extractedTexts.filter((extracted) => extracted);
 
   return texts.join('\n\n').trim();
 }

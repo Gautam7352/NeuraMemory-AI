@@ -48,16 +48,3 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   }
 }
 
-/**
- * Convenience wrapper that embeds a single text.
- *
- * @planned vNext
- * Reserved for upcoming query-time semantic search endpoints.
- */
-export async function generateEmbedding(text: string): Promise<number[]> {
-  const [embedding] = await generateEmbeddings([text]);
-  if (!embedding) {
-    throw new AppError(500, 'Embedding generation returned no result.');
-  }
-  return embedding;
-}

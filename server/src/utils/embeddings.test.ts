@@ -85,8 +85,8 @@ describe('embeddings util', () => {
 
       const error = await generateEmbeddings(['test']).catch((e) => e);
       expect(error).toBeInstanceOf(AppError);
-      expect(error.statusCode).toBe(502);
-      expect(error.message).toBe('Embedding generation failed: API Rate Limit');
+      expect((error as AppError).statusCode).toBe(502);
+      expect((error as AppError).message).toBe('Embedding generation failed: API Rate Limit');
     });
 
     it('should handle non-Error throws from API', async () => {
@@ -101,22 +101,22 @@ describe('embeddings util', () => {
     });
   });
 
-  describe('generateEmbedding', () => {
-    it('should successfully return a single embedding array', async () => {
+  describe('generateEmbedding behaviour handled by generateEmbeddings for single strings', () => {
+    it('should successfully return a single embedding array wrapped in outer array', async () => {
       const mockEmbedding = Array(EMBEDDING_DIMENSION).fill(0.5);
 
       mockCreate.mockResolvedValueOnce({
         data: [{ index: 0, embedding: mockEmbedding }],
       });
 
-      const result = await generateEmbedding('hello world');
+      const result = await generateEmbeddings(['hello world']);
 
       expect(mockCreate).toHaveBeenCalledTimes(1);
       expect(mockCreate).toHaveBeenCalledWith({
         model: 'openai/text-embedding-3-small',
         input: ['hello world'],
       });
-      expect(result).toEqual(mockEmbedding);
+      expect(result).toEqual([mockEmbedding]);
     });
 
     it('should throw AppError with status 500 if text is blank (no result returned)', async () => {
@@ -126,8 +126,7 @@ describe('embeddings util', () => {
       expect(error.message).toBe('Embedding generation returned no result.');
     });
 
-    it('should throw AppError with status 500 if API somehow returns empty data', async () => {
-      // It will throw 502 from generateEmbeddings inside the try/catch blocks due to destructuring data.
+    it('should return empty array if API somehow returns empty data', async () => {
       mockCreate.mockResolvedValueOnce({ data: [] });
 
       // Because '[]' won't throw until it gets returned back out, wait...

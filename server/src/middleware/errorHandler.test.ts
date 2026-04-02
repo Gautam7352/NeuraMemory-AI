@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
 import { ZodError, ZodIssue } from 'zod';
-import { AppError } from '../utils/AppError';
-import { errorHandler } from './errorHandler';
+import { AppError } from '../utils/AppError.js';
+import { errorHandler } from './errorHandler.js';
 
 describe('errorHandler', () => {
   let mockReq: Partial<Request>;
@@ -140,7 +140,7 @@ describe('errorHandler', () => {
     const err = new Error('Test context');
     mockReq.headers = { 'x-request-id': 'req-123' };
     mockReq.url = '/fallback-url';
-    mockReq.originalUrl = undefined;
+    mockReq.originalUrl = '' as unknown as string;
 
     errorHandler(err, mockReq as Request, mockRes as Response, mockNext);
 

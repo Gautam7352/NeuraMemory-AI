@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { Analytics } from '@vercel/analytics/react';
 
 import Navbar from './components/Navbar';
@@ -56,10 +56,10 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <AppContent />
       <Analytics />
-    </Router>
+    </BrowserRouter>
   );
 }
 

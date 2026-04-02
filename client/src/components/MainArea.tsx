@@ -418,8 +418,19 @@ const MainArea = () => {
           onClick={() => navigate('/manage-memories')}
           className="w-full flex items-center justify-center gap-2 border border-neutral-700 hover:border-neutral-500 text-slate-400 hover:text-white rounded-xl py-3 text-sm font-semibold transition-colors duration-150 cursor-pointer"
         >
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18" />
+          <svg
+            width="15"
+            height="15"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 7h18M3 12h18M3 17h18"
+            />
           </svg>
           Manage Memories
         </button>

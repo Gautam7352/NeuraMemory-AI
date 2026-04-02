@@ -50,15 +50,8 @@ export async function loginController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const result = loginSchema.safeParse(req.body);
-    if (!result.success) {
-      throw new AppError(
-        400,
-        result.error.errors[0]?.message ?? 'Invalid input.',
-      );
-    }
+    const { email, password } = loginSchema.parse(req.body);
 
-    const { email, password } = result.data;
     const response = await loginService(email, password);
 
     res.cookie('authorization', response.token, {
@@ -80,15 +73,8 @@ export async function registerController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const result = registerSchema.safeParse(req.body);
-    if (!result.success) {
-      throw new AppError(
-        400,
-        result.error.errors[0]?.message ?? 'Invalid input.',
-      );
-    }
+    const { email, password } = registerSchema.parse(req.body);
 
-    const { email, password } = result.data;
     const response = await registerService(email, password);
 
     res.cookie('authorization', response.token, {

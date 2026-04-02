@@ -35,7 +35,11 @@ describe('errorHandler', () => {
 
   it('should handle body parser syntax error', () => {
     // A simulated body parser error
-    const err = new Error('Unexpected token') as Error & { status?: number; type?: string; body?: unknown };
+    const err = new Error('Unexpected token') as Error & {
+      status?: number;
+      type?: string;
+      body?: unknown;
+    };
     err.status = 400;
     err.type = 'entity.parse.failed';
     err.body = '{ malformed json }';

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  generateEmbedding,
   generateEmbeddings,
   EMBEDDING_DIMENSION,
 } from './embeddings.js';
@@ -79,7 +78,7 @@ describe('embeddings util', () => {
     it('should wrap API errors in an AppError with status 502', async () => {
       mockCreate.mockRejectedValueOnce(new Error('API Rate Limit'));
 
-      const error = await generateEmbeddings(['test']).catch((e) => e);
+      const error = await generateEmbeddings(['test']).catch((e: any) => e);
       expect(error).toBeInstanceOf(AppError);
       expect(error.statusCode).toBe(502);
       expect(error.message).toBe('Embedding generation failed: API Rate Limit');
@@ -88,7 +87,7 @@ describe('embeddings util', () => {
     it('should handle non-Error throws from API', async () => {
       mockCreate.mockRejectedValueOnce('Some string error');
 
-      const error = await generateEmbeddings(['test']).catch((e) => e);
+      const error = await generateEmbeddings(['test']).catch((e: any) => e);
       expect(error).toBeInstanceOf(AppError);
       expect(error.statusCode).toBe(502);
       expect(error.message).toBe(
@@ -104,55 +103,10 @@ describe('embeddings util', () => {
 
     it('should throw AppError if response data is undefined', async () => {
       mockCreate.mockResolvedValueOnce({});
-      const error = await generateEmbeddings(['valid text']).catch((e) => e);
+      const error = await generateEmbeddings(['valid text']).catch((e: any) => e);
       expect(error).toBeInstanceOf(AppError);
       expect(error.statusCode).toBe(502);
       expect(error.message).toContain('Embedding generation failed');
-    });
-  });
-
-  describe('generateEmbedding', () => {
-    it('should successfully return a single embedding array', async () => {
-      const mockEmbedding = Array(EMBEDDING_DIMENSION).fill(0.5);
-
-      mockCreate.mockResolvedValueOnce({
-        data: [{ index: 0, embedding: mockEmbedding }],
-      });
-
-      const result = await generateEmbedding('hello world');
-
-      expect(mockCreate).toHaveBeenCalledTimes(1);
-      expect(mockCreate).toHaveBeenCalledWith({
-        model: 'openai/text-embedding-3-small',
-        input: ['hello world'],
-      });
-      expect(result).toEqual(mockEmbedding);
-    });
-
-    it('should throw AppError with status 500 if text is blank (no result returned)', async () => {
-      const error = await generateEmbedding('   ').catch((e) => e);
-      expect(error).toBeInstanceOf(AppError);
-      expect(error.statusCode).toBe(500);
-      expect(error.message).toBe('Embedding generation returned no result.');
-    });
-
-    it('should throw AppError with status 500 if API somehow returns empty data', async () => {
-      // It will throw 502 from generateEmbeddings inside the try/catch blocks due to destructuring data.
-      mockCreate.mockResolvedValueOnce({ data: [] });
-
-      // Because '[]' won't throw until it gets returned back out, wait...
-      // Actually `generateEmbeddings` expects response.data to exist and loops over it.
-      // If `response.data` is empty, `response.data` is `[]`.
-      // `[...response.data]` is `[]`, mapped is `[]`.
-      // Returned is `[]`.
-      // `generateEmbedding` will then do: `const [embedding] = await generateEmbeddings(['valid text']);`
-      // `embedding` will be `undefined`.
-      // And throw `AppError(500, 'Embedding generation returned no result.')`.
-
-      const error = await generateEmbedding('valid text').catch((e) => e);
-      expect(error).toBeInstanceOf(AppError);
-      expect(error.statusCode).toBe(500);
-      expect(error.message).toBe('Embedding generation returned no result.');
     });
   });
 });

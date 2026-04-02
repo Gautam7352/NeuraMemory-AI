@@ -33,7 +33,7 @@ describe('requireAuth middleware', () => {
 
     mockRequest.headers = { authorization: `Bearer ${validToken}` };
     vi.mocked(jwt.verify).mockReturnValue(
-      decodedPayload as unknown as jwt.JwtPayload,
+      decodedPayload as unknown as any,
     );
 
     requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
@@ -50,7 +50,7 @@ describe('requireAuth middleware', () => {
 
     mockRequest.cookies = { authorization: validToken };
     vi.mocked(jwt.verify).mockReturnValue(
-      decodedPayload as unknown as jwt.JwtPayload,
+      decodedPayload as unknown as any,
     );
 
     requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
@@ -65,7 +65,7 @@ describe('requireAuth middleware', () => {
     requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockNext).toHaveBeenCalledTimes(1);
-    const error = vi.mocked(mockNext).mock.calls[0]?.[0] as AppError;
+    const error = vi.mocked(mockNext).mock.calls[0]?.[0] as unknown as AppError;
     expect(error).toBeInstanceOf(AppError);
     expect(error?.statusCode).toBe(401);
     expect(error?.message).toBe('Authentication required. No token provided.');
@@ -77,13 +77,13 @@ describe('requireAuth middleware', () => {
 
     mockRequest.headers = { authorization: `Bearer ${validToken}` };
     vi.mocked(jwt.verify).mockReturnValue(
-      invalidPayload as unknown as jwt.JwtPayload,
+      invalidPayload as unknown as any,
     );
 
     requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockNext).toHaveBeenCalledTimes(1);
-    const error = vi.mocked(mockNext).mock.calls[0]?.[0] as AppError;
+    const error = vi.mocked(mockNext).mock.calls[0]?.[0] as unknown as AppError;
     expect(error).toBeInstanceOf(AppError);
     expect(error?.statusCode).toBe(401);
     expect(error?.message).toBe('Invalid token payload.');
@@ -105,7 +105,7 @@ describe('requireAuth middleware', () => {
     requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockNext).toHaveBeenCalledTimes(1);
-    const error = vi.mocked(mockNext).mock.calls[0]?.[0] as AppError;
+    const error = vi.mocked(mockNext).mock.calls[0]?.[0] as unknown as AppError;
     expect(error).toBeInstanceOf(AppError);
     expect(error?.statusCode).toBe(401);
     expect(error?.message).toBe('Token has expired. Please log in again.');
@@ -127,7 +127,7 @@ describe('requireAuth middleware', () => {
     requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockNext).toHaveBeenCalledTimes(1);
-    const error = vi.mocked(mockNext).mock.calls[0]?.[0] as AppError;
+    const error = vi.mocked(mockNext).mock.calls[0]?.[0] as unknown as AppError;
     expect(error).toBeInstanceOf(AppError);
     expect(error?.statusCode).toBe(401);
     expect(error?.message).toBe('Invalid token: invalid signature');
@@ -145,7 +145,7 @@ describe('requireAuth middleware', () => {
     requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockNext).toHaveBeenCalledTimes(1);
-    const error = vi.mocked(mockNext).mock.calls[0]?.[0] as AppError;
+    const error = vi.mocked(mockNext).mock.calls[0]?.[0] as unknown as AppError;
     expect(error).toBeInstanceOf(AppError);
     expect(error?.statusCode).toBe(401);
     expect(error?.message).toBe(

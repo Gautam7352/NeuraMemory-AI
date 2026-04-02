@@ -22,7 +22,8 @@ const FilterBar = ({
   onSearchChange,
   onClear,
 }: FilterBarProps) => {
-  const hasActiveFilter = selectedKind !== '' || selectedSource !== '' || searchQuery !== '';
+  const hasActiveFilter =
+    selectedKind !== '' || selectedSource !== '' || searchQuery !== '';
 
   return (
     <div className="flex flex-wrap items-center gap-3">

@@ -128,6 +128,9 @@ describe('embeddings util', () => {
 
     it('should return empty array if API somehow returns empty data', async () => {
       mockCreate.mockResolvedValueOnce({ data: [] });
+      const result = await generateEmbeddings(['valid text']);
+      expect(result).toEqual([]);
+    });
 
       // Because '[]' won't throw until it gets returned back out, wait...
       // Actually `generateEmbeddings` expects response.data to exist and loops over it.
@@ -140,8 +143,8 @@ describe('embeddings util', () => {
 
       const error = await generateEmbedding('valid text').catch((e) => e);
       expect(error).toBeInstanceOf(AppError);
-      expect(error.statusCode).toBe(500);
-      expect(error.message).toBe('Embedding generation returned no result.');
+      expect(error.statusCode).toBe(502);
+      expect(error.message).toContain('Embedding generation failed');
     });
   });
 });

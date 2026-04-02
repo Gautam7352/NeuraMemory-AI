@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generateEmbedding, generateEmbeddings, EMBEDDING_DIMENSION } from './embeddings.js';
+import {
+  generateEmbedding,
+  generateEmbeddings,
+  EMBEDDING_DIMENSION,
+} from './embeddings.js';
 import { getOpenRouterClient } from '../lib/openrouter.js';
 import { AppError } from './AppError.js';
 
@@ -75,7 +79,7 @@ describe('embeddings util', () => {
     it('should wrap API errors in an AppError with status 502', async () => {
       mockCreate.mockRejectedValueOnce(new Error('API Rate Limit'));
 
-      const error = await generateEmbeddings(['test']).catch(e => e);
+      const error = await generateEmbeddings(['test']).catch((e) => e);
       expect(error).toBeInstanceOf(AppError);
       expect(error.statusCode).toBe(502);
       expect(error.message).toBe('Embedding generation failed: API Rate Limit');
@@ -84,10 +88,12 @@ describe('embeddings util', () => {
     it('should handle non-Error throws from API', async () => {
       mockCreate.mockRejectedValueOnce('Some string error');
 
-      const error = await generateEmbeddings(['test']).catch(e => e);
+      const error = await generateEmbeddings(['test']).catch((e) => e);
       expect(error).toBeInstanceOf(AppError);
       expect(error.statusCode).toBe(502);
-      expect(error.message).toBe('Embedding generation failed: Unknown error generating embeddings');
+      expect(error.message).toBe(
+        'Embedding generation failed: Unknown error generating embeddings',
+      );
     });
   });
 
@@ -110,7 +116,7 @@ describe('embeddings util', () => {
     });
 
     it('should throw AppError with status 500 if text is blank (no result returned)', async () => {
-      const error = await generateEmbedding('   ').catch(e => e);
+      const error = await generateEmbedding('   ').catch((e) => e);
       expect(error).toBeInstanceOf(AppError);
       expect(error.statusCode).toBe(500);
       expect(error.message).toBe('Embedding generation returned no result.');
@@ -129,7 +135,7 @@ describe('embeddings util', () => {
       // `embedding` will be `undefined`.
       // And throw `AppError(500, 'Embedding generation returned no result.')`.
 
-      const error = await generateEmbedding('valid text').catch(e => e);
+      const error = await generateEmbedding('valid text').catch((e) => e);
       expect(error).toBeInstanceOf(AppError);
       expect(error.statusCode).toBe(500);
       expect(error.message).toBe('Embedding generation returned no result.');

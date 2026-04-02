@@ -37,7 +37,9 @@ describe('memory.service', () => {
       });
 
       // The call should throw a 403 AppError
-      await expect(deleteUserMemoryById(userId, pointId)).rejects.toThrow(AppError);
+      await expect(deleteUserMemoryById(userId, pointId)).rejects.toThrow(
+        AppError,
+      );
       try {
         await deleteUserMemoryById(userId, pointId);
       } catch (error: any) {
@@ -78,7 +80,9 @@ describe('memory.service', () => {
       // Mock getMemoryPointById to return null
       vi.mocked(memoryRepository.getMemoryPointById).mockResolvedValue(null);
 
-      await expect(deleteUserMemoryById(userId, pointId)).rejects.toThrow(AppError);
+      await expect(deleteUserMemoryById(userId, pointId)).rejects.toThrow(
+        AppError,
+      );
       try {
         await deleteUserMemoryById(userId, pointId);
       } catch (error: any) {

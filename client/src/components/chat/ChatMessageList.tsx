@@ -1,5 +1,5 @@
 import ReactMarkdown from 'react-markdown';
-import { ChatMessage } from '../../types/chat';
+import type { ChatMessage } from '../../types/chat';
 import { AssistantAvatar } from './AssistantAvatar';
 
 interface ChatMessageListProps {

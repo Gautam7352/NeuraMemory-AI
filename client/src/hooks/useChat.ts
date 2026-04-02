@@ -4,7 +4,7 @@ import {
   getChatHistory,
   clearChatHistory,
 } from '../lib/chatApi';
-import { ChatMessage } from '../types/chat';
+import type { ChatMessage } from '../types/chat';
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);

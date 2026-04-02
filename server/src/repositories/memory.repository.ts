@@ -17,7 +17,7 @@ import type {
 
 const COLLECTION_NAME = 'memories';
 
-let collectionReady = false;
+let collectionInitPromise: Promise<void> | null = null;
 
 // ---------------------------------------------------------------------------
 // Collection bootstrap
@@ -28,50 +28,53 @@ let collectionReady = false;
  * Called lazily on first write so the app can start even if Qdrant is slow.
  */
 async function ensureCollection(): Promise<void> {
-  if (collectionReady) return;
+  if (collectionInitPromise) return collectionInitPromise;
 
-  const client = getQdrantClient();
+  collectionInitPromise = (async () => {
+    const client = getQdrantClient();
 
-  try {
-    const collections = await client.getCollections();
-    const exists = collections.collections.some(
-      (c) => c.name === COLLECTION_NAME,
-    );
-
-    if (!exists) {
-      await client.createCollection(COLLECTION_NAME, {
-        vectors: {
-          size: EMBEDDING_DIMENSION,
-          distance: 'Cosine',
-        },
-      });
-
-      // Create payload indexes for filtering
-      await client.createPayloadIndex(COLLECTION_NAME, {
-        field_name: 'userId',
-        field_schema: 'keyword',
-      });
-
-      await client.createPayloadIndex(COLLECTION_NAME, {
-        field_name: 'kind',
-        field_schema: 'keyword',
-      });
-
-      await client.createPayloadIndex(COLLECTION_NAME, {
-        field_name: 'source',
-        field_schema: 'keyword',
-      });
-
-      console.log(
-        `[MemoryRepo] Created Qdrant collection "${COLLECTION_NAME}" with dimension ${EMBEDDING_DIMENSION}.`,
+    try {
+      const collections = await client.getCollections();
+      const exists = collections.collections.some(
+        (c) => c.name === COLLECTION_NAME,
       );
-    }
 
-    collectionReady = true;
-  } catch (err) {
-    console.error('[MemoryRepo] Failed to ensure collection:', err);
-    throw err;
-  }
+      if (!exists) {
+        await client.createCollection(COLLECTION_NAME, {
+          vectors: {
+            size: EMBEDDING_DIMENSION,
+            distance: 'Cosine',
+          },
+        });
+
+        // Create payload indexes for filtering
+        await client.createPayloadIndex(COLLECTION_NAME, {
+          field_name: 'userId',
+          field_schema: 'keyword',
+        });
+
+        await client.createPayloadIndex(COLLECTION_NAME, {
+          field_name: 'kind',
+          field_schema: 'keyword',
+        });
+
+        await client.createPayloadIndex(COLLECTION_NAME, {
+          field_name: 'source',
+          field_schema: 'keyword',
+        });
+
+        console.log(
+          `[MemoryRepo] Created Qdrant collection "${COLLECTION_NAME}" with dimension ${EMBEDDING_DIMENSION}.`,
+        );
+      }
+    } catch (err) {
+      collectionInitPromise = null;
+      console.error('[MemoryRepo] Failed to ensure collection:', err);
+      throw err;
+    }
+  })();
+
+  return collectionInitPromise;
 }
 
 // ---------------------------------------------------------------------------

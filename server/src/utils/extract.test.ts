@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { extractMemories } from './extract.js';
 import { getOpenRouterClient } from '../lib/openrouter.js';
 import { AppError } from './AppError.js';
-import type { ExtractedMemories } from '../types/memory.types.js';
 
 // Mock getOpenRouterClient
 vi.mock('../lib/openrouter.js', () => ({
@@ -57,7 +56,7 @@ describe('extractMemories', () => {
     expect(mockCreate).toHaveBeenCalledTimes(1);
 
     // Verify system prompt / user formatting is correct
-    const callArgs = mockCreate.mock.calls[0][0];
+    const callArgs = mockCreate.mock.calls[0]![0]!;
     expect(callArgs.model).toBe('google/gemini-2.0-flash-001');
     expect(callArgs.messages[1].content).toContain('Some text about me');
   });
@@ -73,7 +72,7 @@ describe('extractMemories', () => {
     await extractMemories(longText);
 
     expect(mockCreate).toHaveBeenCalledTimes(1);
-    const callArgs = mockCreate.mock.calls[0][0];
+    const callArgs = mockCreate.mock.calls[0]![0]!;
     const userContent = callArgs.messages[1].content;
 
     // Ensure the text has been truncated

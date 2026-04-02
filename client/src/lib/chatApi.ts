@@ -6,12 +6,17 @@ export interface ChatMessage {
   createdAt: string; // ISO string from JSON
 }
 
-export async function sendMessage(message: string): Promise<{ reply: string; conversationId: string }> {
+export async function sendMessage(
+  message: string,
+): Promise<{ reply: string; conversationId: string }> {
   const response = await api.post('/api/v1/chat', { message });
   return response.data.data;
 }
 
-export async function getChatHistory(): Promise<{ messages: ChatMessage[]; conversationId: string | null }> {
+export async function getChatHistory(): Promise<{
+  messages: ChatMessage[];
+  conversationId: string | null;
+}> {
   const response = await api.get('/api/v1/chat/history');
   return response.data.data;
 }

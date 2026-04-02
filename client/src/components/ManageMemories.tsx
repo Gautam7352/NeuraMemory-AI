@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { api } from '../lib/api';
-import { type Memory, buildQueryParams, filterMemories } from '../lib/memoryFilters';
+import {
+  type Memory,
+  buildQueryParams,
+  filterMemories,
+} from '../lib/memoryFilters';
 import FilterBar from './FilterBar';
 
 const ManageMemories = () => {
@@ -74,7 +78,9 @@ const ManageMemories = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmed = window.confirm('Delete this memory? This cannot be undone.');
+    const confirmed = window.confirm(
+      'Delete this memory? This cannot be undone.',
+    );
     if (!confirmed) return;
     try {
       await api.delete(`/api/v1/memories/${id}`);
@@ -97,7 +103,8 @@ const ManageMemories = () => {
     }
   };
 
-  const hasActiveFilters = selectedKind !== '' || selectedSource !== '' || searchQuery !== '';
+  const hasActiveFilters =
+    selectedKind !== '' || selectedSource !== '' || searchQuery !== '';
 
   return (
     <main className="flex flex-col items-center w-full bg-black p-3 sm:p-4 md:p-8 flex-1 overflow-y-auto">
@@ -109,8 +116,19 @@ const ManageMemories = () => {
               onClick={() => navigate('/')}
               className="flex items-center gap-2 w-fit text-sm font-medium text-slate-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg px-3 py-1.5 transition-colors duration-150"
             >
-              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              <svg
+                width="15"
+                height="15"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               Back
             </button>
@@ -123,8 +141,8 @@ const ManageMemories = () => {
                   Manage Memories
                 </h1>
                 <p className="text-gray-300 text-sm md:text-base mt-2 max-w-2xl">
-                  Organize your saved notes, revisit important context, and clean
-                  up entries you no longer need.
+                  Organize your saved notes, revisit important context, and
+                  clean up entries you no longer need.
                 </p>
               </div>
               <div className="flex gap-2 flex-wrap">
@@ -173,7 +191,9 @@ const ManageMemories = () => {
           )}
 
           {loading && (
-            <p className="text-gray-400 text-sm text-center py-8">Loading memories...</p>
+            <p className="text-gray-400 text-sm text-center py-8">
+              Loading memories...
+            </p>
           )}
           {error && (
             <div className="flex flex-col items-center gap-3 py-8">
@@ -194,11 +214,14 @@ const ManageMemories = () => {
                 : 'No memories found.'}
             </p>
           )}
-          {!loading && !error && memories.length > 0 && visibleMemories.length === 0 && (
-            <p className="text-gray-500 text-sm text-center py-8">
-              No memories match your search.
-            </p>
-          )}
+          {!loading &&
+            !error &&
+            memories.length > 0 &&
+            visibleMemories.length === 0 && (
+              <p className="text-gray-500 text-sm text-center py-8">
+                No memories match your search.
+              </p>
+            )}
           {!loading && !error && visibleMemories.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {visibleMemories.map((memory) => (

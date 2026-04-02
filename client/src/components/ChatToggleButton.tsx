@@ -8,7 +8,9 @@ interface ChatToggleButtonProps {
 const STORAGE_KEY = 'neura-chat-btn-pos';
 
 function ChatToggleButton({ isOpen, onToggle }: ChatToggleButtonProps) {
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(
+    null,
+  );
 
   // Drag state stored in refs to avoid re-renders during drag
   const dragRef = useRef<{

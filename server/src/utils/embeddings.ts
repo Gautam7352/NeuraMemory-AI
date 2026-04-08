@@ -53,8 +53,9 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
   const result = await generateEmbeddings([text]);
-  if (result.length === 0) {
+  const embedding = result[0];
+  if (!embedding) {
     throw new AppError(500, 'Embedding generation returned no result.');
   }
-  return result[0];
+  return embedding;
 }

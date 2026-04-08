@@ -29,13 +29,9 @@ const allowedOrigins = env.ALLOWED_ORIGINS.split(',')
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow server-to-server / curl requests in development, reject in production
+      // allow server-to-server / curl requests and health checks
       if (!origin) {
-        if (env.NODE_ENV !== 'production') {
-          return callback(null, true);
-        }
-        console.warn(`[CORS] Rejected Missing Origin in production`);
-        return callback(new Error(`CORS: missing origin not allowed`));
+        return callback(null, true);
       }
 
       if (allowedOrigins.includes(origin)) return callback(null, true);

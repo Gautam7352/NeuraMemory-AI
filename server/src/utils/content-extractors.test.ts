@@ -31,12 +31,12 @@ describe('extractTextFromDocument', () => {
       const pdfString = '... Some other data ...';
       const buffer = Buffer.from(pdfString, 'latin1');
       await expect(
-        extractTextFromDocument(buffer, 'application/pdf')
+        extractTextFromDocument(buffer, 'application/pdf'),
       ).rejects.toThrowError(
         new AppError(
           422,
-          'Could not extract text from the PDF. The file may be scanned/image‑based or use compressed text streams. Please provide a text‑based PDF.'
-        )
+          'Could not extract text from the PDF. The file may be scanned/image‑based or use compressed text streams. Please provide a text‑based PDF.',
+        ),
       );
     });
   });
@@ -56,18 +56,24 @@ describe('extractTextFromDocument', () => {
       </w:document>PK...other files...`;
 
       const buffer = Buffer.from(docxData, 'utf-8');
-      const result = await extractTextFromDocument(buffer, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      const result = await extractTextFromDocument(
+        buffer,
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      );
 
       // The implementation collapses whitespace and Replaces `<w:p>` with `\n` and strips tags.
       // With our input, `<w:p>` gets converted to `\n`, then `<[^>]+>` strips `<w:r>`, `<w:t>`, etc.
       // So "Hello" and "World" should be joined by newlines.
-      expect(result).toBe('Hello\n\n World');
+      expect(result).toBe('Hello\n\nWorld');
     });
 
     it('should handle XML entities properly', async () => {
       const docxData = `word/document.xml <?xml> <w:p>A &amp; B &lt; C &gt; D &quot; E &#39; F</w:p> PK`;
       const buffer = Buffer.from(docxData, 'utf-8');
-      const result = await extractTextFromDocument(buffer, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      const result = await extractTextFromDocument(
+        buffer,
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      );
       expect(result.trim()).toBe('A & B < C > D " E \' F');
     });
 
@@ -75,12 +81,15 @@ describe('extractTextFromDocument', () => {
       const docxData = `PK...other file...PK`;
       const buffer = Buffer.from(docxData, 'utf-8');
       await expect(
-        extractTextFromDocument(buffer, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        extractTextFromDocument(
+          buffer,
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ),
       ).rejects.toThrowError(
         new AppError(
           422,
-          'The uploaded DOCX file appears to be malformed — could not locate word/document.xml.'
-        )
+          'The uploaded DOCX file appears to be malformed — could not locate word/document.xml.',
+        ),
       );
     });
 
@@ -88,12 +97,15 @@ describe('extractTextFromDocument', () => {
       const docxData = `word/document.xml But no xml tag PK`;
       const buffer = Buffer.from(docxData, 'utf-8');
       await expect(
-        extractTextFromDocument(buffer, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        extractTextFromDocument(
+          buffer,
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ),
       ).rejects.toThrowError(
         new AppError(
           422,
-          'Could not parse the DOCX file — no XML content found.'
-        )
+          'Could not parse the DOCX file — no XML content found.',
+        ),
       );
     });
 
@@ -101,12 +113,15 @@ describe('extractTextFromDocument', () => {
       const docxData = `word/document.xml <?xml> <w:p></w:p> PK`;
       const buffer = Buffer.from(docxData, 'utf-8');
       await expect(
-        extractTextFromDocument(buffer, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        extractTextFromDocument(
+          buffer,
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ),
       ).rejects.toThrowError(
         new AppError(
           422,
-          'Could not extract text from the DOCX file. The document may be empty.'
-        )
+          'Could not extract text from the DOCX file. The document may be empty.',
+        ),
       );
     });
   });
@@ -115,12 +130,12 @@ describe('extractTextFromDocument', () => {
     it('should throw 415 error', async () => {
       const buffer = Buffer.from('some data', 'utf-8');
       await expect(
-        extractTextFromDocument(buffer, 'image/png')
+        extractTextFromDocument(buffer, 'image/png'),
       ).rejects.toThrowError(
         new AppError(
           415,
-          'Unsupported document type: image/png. Supported types: PDF, DOCX, TXT, MD.'
-        )
+          'Unsupported document type: image/png. Supported types: PDF, DOCX, TXT, MD.',
+        ),
       );
     });
   });

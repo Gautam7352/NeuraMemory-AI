@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { deleteUserMemoryById } from './memory.service.js';
 import * as memoryRepository from '../repositories/memory.repository.js';
 import { AppError } from '../utils/AppError.js';
-import type { StoredMemoryPayload } from '../types/memory.types.js';
 
 vi.mock('../repositories/memory.repository.js', () => ({
   deleteMemoryById: vi.fn(),

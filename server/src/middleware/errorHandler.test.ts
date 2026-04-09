@@ -140,7 +140,7 @@ describe('errorHandler', () => {
     const err = new Error('Test context');
     mockReq.headers = { 'x-request-id': 'req-123' };
     mockReq.url = '/fallback-url';
-    mockReq.originalUrl = '' as unknown as string;
+    mockReq.originalUrl = undefined;
 
     errorHandler(err, mockReq as Request, mockRes as Response, mockNext);
 

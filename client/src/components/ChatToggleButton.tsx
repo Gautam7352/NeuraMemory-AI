@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 
 interface ChatToggleButtonProps {
   isOpen: boolean;
@@ -9,7 +9,20 @@ const STORAGE_KEY = 'neura-chat-btn-pos';
 
 function ChatToggleButton({ isOpen, onToggle }: ChatToggleButtonProps) {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(
-    null,
+    () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+            return parsed;
+          }
+        }
+      } catch {
+        // ignore parse errors
+      }
+      return null;
+    },
   );
 
   // Drag state stored in refs to avoid re-renders during drag
@@ -20,21 +33,6 @@ function ChatToggleButton({ isOpen, onToggle }: ChatToggleButtonProps) {
     currentX: number;
     currentY: number;
   }>({ startX: 0, startY: 0, isDragging: false, currentX: 0, currentY: 0 });
-
-  // Restore position from localStorage on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
-          setPosition(parsed);
-        }
-      }
-    } catch {
-      // ignore parse errors
-    }
-  }, []);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);

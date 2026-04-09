@@ -17,8 +17,8 @@ describe('extractMemories', () => {
     // Set up default mock behavior for OpenRouter API
     mockCreate = vi.fn();
     vi.mocked(getOpenRouterClient).mockReturnValue({
-      chat: { completions: { create: mockCreate } }
-    } as any);
+      chat: { completions: { create: mockCreate } },
+    } as unknown as ReturnType<typeof getOpenRouterClient>);
   });
 
   it('should handle empty input without calling LLM', async () => {
@@ -36,12 +36,12 @@ describe('extractMemories', () => {
               semantic: ['User loves typescript', 'User lives in NY'],
               bubbles: [
                 { text: 'User decided to write tests', importance: 0.9 },
-                { text: 'User is hungry', importance: 0.4 }
-              ]
-            })
-          }
-        }
-      ]
+                { text: 'User is hungry', importance: 0.4 },
+              ],
+            }),
+          },
+        },
+      ],
     });
 
     const result = await extractMemories('Some text about me');
@@ -50,8 +50,8 @@ describe('extractMemories', () => {
       semantic: ['User loves typescript', 'User lives in NY'],
       bubbles: [
         { text: 'User decided to write tests', importance: 0.9 },
-        { text: 'User is hungry', importance: 0.4 }
-      ]
+        { text: 'User is hungry', importance: 0.4 },
+      ],
     });
     expect(mockCreate).toHaveBeenCalledTimes(1);
 
@@ -63,7 +63,9 @@ describe('extractMemories', () => {
 
   it('should truncate excessively long text input before sending to LLM', async () => {
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify({ semantic: [], bubbles: [] }) } }]
+      choices: [
+        { message: { content: JSON.stringify({ semantic: [], bubbles: [] }) } },
+      ],
     });
 
     const MAX_INPUT_LENGTH = 80_000;
@@ -83,14 +85,14 @@ describe('extractMemories', () => {
 
   it('should return empty memories if LLM response content is null or empty', async () => {
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: null } }]
+      choices: [{ message: { content: null } }],
     });
 
     const result1 = await extractMemories('text');
     expect(result1).toEqual({ semantic: [], bubbles: [] });
 
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: '' } }]
+      choices: [{ message: { content: '' } }],
     });
 
     const result2 = await extractMemories('text');
@@ -99,7 +101,7 @@ describe('extractMemories', () => {
 
   it('should handle invalid JSON response gracefully and return empty memories', async () => {
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: 'This is not JSON' } }]
+      choices: [{ message: { content: 'This is not JSON' } }],
     });
 
     const result = await extractMemories('text');
@@ -108,7 +110,9 @@ describe('extractMemories', () => {
 
   it('should handle malformed JSON object missing expected keys gracefully', async () => {
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify({ someOtherKey: true }) } }]
+      choices: [
+        { message: { content: JSON.stringify({ someOtherKey: true }) } },
+      ],
     });
 
     const result = await extractMemories('text');
@@ -117,15 +121,21 @@ describe('extractMemories', () => {
 
   it('should handle malformed nested types in JSON gracefully', async () => {
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify({
-        semantic: ['Valid string', 123, null],
-        bubbles: [
-          { text: 'Valid bubble', importance: 0.5 },
-          { invalidBubble: true },
-          { text: 123 },
-          { text: 'Clamped importance', importance: 5 } // Will be clamped to 1
-        ]
-      }) } }]
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              semantic: ['Valid string', 123, null],
+              bubbles: [
+                { text: 'Valid bubble', importance: 0.5 },
+                { invalidBubble: true },
+                { text: 123 },
+                { text: 'Clamped importance', importance: 5 }, // Will be clamped to 1
+              ],
+            }),
+          },
+        },
+      ],
     });
 
     const result = await extractMemories('text');
@@ -133,8 +143,8 @@ describe('extractMemories', () => {
       semantic: ['Valid string'],
       bubbles: [
         { text: 'Valid bubble', importance: 0.5 },
-        { text: 'Clamped importance', importance: 1 }
-      ]
+        { text: 'Clamped importance', importance: 1 },
+      ],
     });
   });
 
@@ -142,12 +152,14 @@ describe('extractMemories', () => {
     mockCreate.mockRejectedValue(new Error('OpenRouter API is down'));
 
     await expect(extractMemories('text')).rejects.toThrow(AppError);
-    await expect(extractMemories('text')).rejects.toThrow('Memory extraction failed: OpenRouter API is down');
+    await expect(extractMemories('text')).rejects.toThrow(
+      'Memory extraction failed: OpenRouter API is down',
+    );
 
     try {
       await extractMemories('text');
-    } catch (err: any) {
-      expect(err.statusCode).toBe(502);
+    } catch (err) {
+      expect((err as AppError).statusCode).toBe(502);
     }
   });
 

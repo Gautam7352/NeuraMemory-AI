@@ -32,9 +32,7 @@ describe('requireAuth middleware', () => {
     const decodedPayload = { userId: '123', email: 'test@example.com' };
 
     mockRequest.headers = { authorization: `Bearer ${validToken}` };
-    vi.mocked(jwt.verify).mockReturnValue(
-      decodedPayload as unknown as void,
-    );
+    vi.mocked(jwt.verify).mockReturnValue(decodedPayload as unknown as void);
 
     requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -49,9 +47,7 @@ describe('requireAuth middleware', () => {
     const decodedPayload = { userId: '123', email: 'test@example.com' };
 
     mockRequest.cookies = { authorization: validToken };
-    vi.mocked(jwt.verify).mockReturnValue(
-      decodedPayload as unknown as void,
-    );
+    vi.mocked(jwt.verify).mockReturnValue(decodedPayload as unknown as void);
 
     requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -76,9 +72,7 @@ describe('requireAuth middleware', () => {
     const invalidPayload = { userId: '123' }; // missing email
 
     mockRequest.headers = { authorization: `Bearer ${validToken}` };
-    vi.mocked(jwt.verify).mockReturnValue(
-      invalidPayload as unknown as void,
-    );
+    vi.mocked(jwt.verify).mockReturnValue(invalidPayload as unknown as void);
 
     requireAuth(mockRequest as Request, mockResponse as Response, mockNext);
 

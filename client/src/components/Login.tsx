@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { AxiosError } from 'axios';
-import { api } from '../lib/api';
+import { AuthApiError } from '@supabase/supabase-js';
+
+import { signInUser } from '../utils/supabase';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const data = new FormData(e.currentTarget);
@@ -19,12 +20,13 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await api.post('/api/v1/login', { email, password });
+      // await api.post('/api/v1/login', { email, password });
+      await signInUser(email, password);
       navigate('/');
     } catch (err) {
       const message =
-        err instanceof AxiosError
-          ? (err.response?.data?.message ?? 'Login failed. Please try again.')
+        err instanceof AuthApiError
+          ? (err.message ?? 'Login failed. Please try again.')
           : 'An unexpected error occurred.';
       setError(message);
     } finally {

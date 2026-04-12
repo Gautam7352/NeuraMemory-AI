@@ -55,5 +55,5 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   if (result.length === 0) {
     throw new AppError(500, 'Embedding generation returned no result.');
   }
-  return result[0];
+  return result[0]!;
 }

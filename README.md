@@ -1,4 +1,6 @@
 # NeuraMemory AI: Persistent Memory Layer for the AI age
+![Deployment Status](https://github.com/Gautam7352/NeuraMemory-AI/actions/workflows/deploy.yml/badge.svg)
+
 
 "Intelligence without memory is just a series of disconnected thoughts."
 
@@ -123,7 +125,7 @@ cp client/.env.example client/.env.production
       "args": [
         "-y",
         "mcp-remote",
-        "https://neuramemory-ai.onrender.com/api/v1/mcp?apiKey={YOUR_API_KEY}"
+        "https://neura-memory-ai.vercel.app/api/v1/mcp?apiKey={YOUR_API_KEY}"
       ]
     }
   },

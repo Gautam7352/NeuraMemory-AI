@@ -9,6 +9,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { getQdrantClient } from '../lib/qdrant.js';
+import { query } from '../lib/postgres.js';
 import { EMBEDDING_DIMENSION } from '../utils/embeddings.js';
 import type {
   StoredMemoryPayload,
@@ -88,7 +89,7 @@ export interface UpsertMemoryPoint {
 }
 
 /**
- * Upserts an array of memory points into Qdrant.
+ * Upserts an array of memory points into both Postgres (source of truth) and Qdrant (vector index).
  *
  * @returns The IDs of the upserted points.
  */
@@ -102,17 +103,48 @@ export async function upsertMemories(
   const client = getQdrantClient();
   const ids = points.map(() => randomUUID());
 
-  await client.upsert(COLLECTION_NAME, {
-    wait: true,
-    points: points.map((p, i) => ({
-      id: ids[i]!,
-      vector: p.vector,
-      payload: p.payload as unknown as Record<string, unknown>,
-    })),
-  });
+  // 1. Sync to Postgres first (Source of Truth)
+  // Using a single transactional insert if possible, or batch
+  for (let i = 0; i < points.length; i++) {
+    const { payload } = points[i]!;
+    await query(
+      `INSERT INTO memories (id, user_id, text, kind, importance, source, source_ref, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (id) DO UPDATE SET 
+         text = EXCLUDED.text, 
+         importance = EXCLUDED.importance,
+         updated_at = now()`,
+      [
+        ids[i],
+        payload.userId,
+        payload.text,
+        payload.kind,
+        payload.importance,
+        payload.source,
+        payload.sourceRef || null,
+        payload.createdAt,
+      ]
+    );
+  }
+
+  // 2. Sync to Qdrant
+  try {
+    await client.upsert(COLLECTION_NAME, {
+      wait: true,
+      points: points.map((p, i) => ({
+        id: ids[i]!,
+        vector: p.vector,
+        payload: p.payload as unknown as Record<string, unknown>,
+      })),
+    });
+  } catch (err) {
+    console.error('[MemoryRepo] Qdrant upsert failed after Postgres success:', err);
+    // We keep the Postgres record, but throw so the user knows search might be stale
+    throw err;
+  }
 
   console.log(
-    `[MemoryRepo] Upserted ${points.length} memory point(s) for user ${points[0]?.payload.userId}.`,
+    `[MemoryRepo] Durable upsert of ${points.length} memory point(s) for user ${points[0]?.payload.userId}.`,
   );
 
   return ids;
@@ -199,12 +231,13 @@ export async function getMemoriesByUser(
 // ---------------------------------------------------------------------------
 
 /**
- * Delete all memories for a user.
+ * Delete all memories for a user from both Postgres and Qdrant.
  */
 export async function deleteMemoriesByUser(userId: string): Promise<void> {
   await ensureCollection();
   const client = getQdrantClient();
 
+  // 1. Delete from Qdrant
   await client.delete(COLLECTION_NAME, {
     wait: true,
     filter: {
@@ -212,15 +245,14 @@ export async function deleteMemoriesByUser(userId: string): Promise<void> {
     },
   });
 
-  console.log(`[MemoryRepo] Deleted all memories for user ${userId}.`);
+  // 2. Delete from Postgres
+  await query('DELETE FROM memories WHERE user_id = $1', [userId]);
+
+  console.log(`[MemoryRepo] Deleted all durable memories for user ${userId}.`);
 }
 
 /**
- * Update an existing memory point's vector and text payload.
- *
- * @param pointId - The Qdrant point ID to update.
- * @param vector  - The new embedding vector for the updated text.
- * @param text    - The new text content to store in the payload.
+ * Update an existing memory point's vector and text payload in both DBs.
  */
 export async function updateMemoryPoint(
   pointId: string,
@@ -230,7 +262,15 @@ export async function updateMemoryPoint(
 ): Promise<void> {
   await ensureCollection();
   const client = getQdrantClient();
+  const now = new Date().toISOString();
 
+  // 1. Update Postgres
+  await query(
+    'UPDATE memories SET text = $1, importance = $2, updated_at = $3 WHERE id = $4',
+    [text, existingPayload.importance ?? 0.5, now, pointId]
+  );
+
+  // 2. Update Qdrant
   await client.upsert(COLLECTION_NAME, {
     wait: true,
     points: [
@@ -240,13 +280,13 @@ export async function updateMemoryPoint(
         payload: {
           ...existingPayload,
           text,
-          updatedAt: new Date().toISOString(),
+          updatedAt: now,
         },
       },
     ],
   });
 
-  console.log(`[MemoryRepo] Updated memory point ${pointId}.`);
+  console.log(`[MemoryRepo] Durably updated memory point ${pointId}.`);
 }
 
 /**

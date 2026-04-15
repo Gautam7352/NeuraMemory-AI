@@ -42,6 +42,27 @@ export async function query<
 }
 
 /**
+ * Executes a callback within a managed transaction.
+ * Automatically handles BEGIN/COMMIT/ROLLBACK and client release.
+ */
+export async function withTransaction<T>(
+  fn: (client: pg.PoolClient) => Promise<T>
+): Promise<T> {
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
  * Verifies database connectivity.
  */
 export async function checkConnectivity(): Promise<boolean> {

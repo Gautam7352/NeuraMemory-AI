@@ -11,6 +11,7 @@ import chatRouter from './routes/chat.route.js';
 import healthRouter from './routes/health.route.js';
 import swaggerSpec from './config/swagger.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { csrfProtection } from './middleware/csrf.js';
 import { ensureDatabaseSchema } from './repositories/user.repository.js';
 import { closePool } from './lib/postgres.js';
 import { getQdrantClient, closeQdrantClient } from './lib/qdrant.js';
@@ -22,6 +23,7 @@ app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cookieParser());
 app.use(express.json({ limit: '200kb' }));
+app.use(csrfProtection);
 
 // ---------------------------------------------------------------------------
 // CORS Configuration

@@ -115,17 +115,23 @@ export async function generateApiKeyController(
 }
 
 export async function logoutController(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
+    const userId = req.user?.userId;
+    if (userId) {
+      const { revokeSessionsService } = await import('../services/auth.service.js');
+      await revokeSessionsService(userId);
+    }
+
     res.clearCookie('authorization', {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
-    res.status(200).json({ success: true, message: 'Logged out successfully' });
+    res.status(200).json({ success: true, message: 'Logged out successfully. All sessions revoked.' });
   } catch (err) {
     next(err);
   }
@@ -149,7 +155,8 @@ export async function meController(
       throw new AppError(404, 'User not found');
     }
 
-    const safeUser = { ...user };
+    const { id, email, createdAt, updatedAt } = user;
+    const safeUser = { id, email, createdAt, updatedAt };
     res.status(200).json({ success: true, data: { user: safeUser } });
   } catch (err) {
     next(err);

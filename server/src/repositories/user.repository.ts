@@ -6,7 +6,8 @@ import type { IUser, UserRow } from '../types/auth.types.js';
  * Since API keys are the primary auth mechanism for ingestion/MCP, 
  * caching them reduces DB load significantly.
  */
-const apiKeyCache = new Map<string, (IUser & { id: string })>();
+const apiKeyCache = new Map<string, { user: IUser & { id: string }; timestamp: number }>();
+const CACHE_TTL_MS = 60_000; // 1 minute
 
 /**
  * Ensures the database schema (tables and indexes) exists.
@@ -26,14 +27,6 @@ export async function ensureDatabaseSchema(): Promise<void> {
     )
   `);
 
-  await query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
-  await query(`CREATE INDEX IF NOT EXISTS idx_conversations_user_date ON conversations(user_id, created_at DESC)`);
-  await query(`CREATE INDEX IF NOT EXISTS idx_memories_user_kind ON memories(user_id, kind)`);
-  await query(`
-    CREATE INDEX IF NOT EXISTS idx_users_api_key
-    ON users (api_key) WHERE api_key IS NOT NULL
-  `);
-
   await query(`
     CREATE TABLE IF NOT EXISTS conversations (
       id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -43,6 +36,29 @@ export async function ensureDatabaseSchema(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
+  `);
+  
+  await query(`
+    CREATE TABLE IF NOT EXISTS memories (
+      id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id    UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      text       TEXT        NOT NULL,
+      kind       TEXT        NOT NULL,
+      importance FLOAT       NOT NULL DEFAULT 0.5,
+      source     TEXT        NOT NULL,
+      source_ref TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
+  await query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_conversations_user_date ON conversations(user_id, created_at DESC)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_memories_user_kind ON memories(user_id, kind)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_memories_user_id ON memories(user_id)`);
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_users_api_key
+    ON users (api_key) WHERE api_key IS NOT NULL
   `);
 }
 
@@ -106,7 +122,11 @@ export async function findUserByApiKey(
 ): Promise<(IUser & { id: string }) | null> {
   // 1. Check Cache
   const cached = apiKeyCache.get(apiKey);
-  if (cached) return cached;
+  const now = Date.now();
+
+  if (cached && (now - cached.timestamp < CACHE_TTL_MS)) {
+    return cached.user;
+  }
 
   // 2. Query DB
   const { rows } = await query<UserRow>(
@@ -114,14 +134,30 @@ export async function findUserByApiKey(
     [apiKey],
   );
 
-  if (!rows[0]) return null;
+  if (!rows[0]) {
+    // If it was cached but now missing from DB, clear it
+    if (cached) apiKeyCache.delete(apiKey);
+    return null;
+  }
+  
   const user = rowToUser(rows[0]);
 
   // 3. Store in Cache (simple limit to prevent memory leak)
   if (apiKeyCache.size > 1000) apiKeyCache.clear();
-  apiKeyCache.set(apiKey, user);
+  apiKeyCache.set(apiKey, { user, timestamp: now });
 
   return user;
+}
+
+/**
+ * Locks the user record for the duration of a transaction (FOR UPDATE).
+ * Use this to serialize complex operations like memory ingestion.
+ */
+export async function lockUser(
+  client: { query: (t: string, p: any[]) => Promise<any> },
+  id: string,
+): Promise<void> {
+  await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [id]);
 }
 
 /**

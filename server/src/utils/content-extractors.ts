@@ -9,8 +9,11 @@ GlobalWorkerOptions.workerSrc = '';
 
 /**
  * Fetches a URL and returns the main textual content.
+ * Includes absolute limits to prevent memory exhaustion from giant pages (max 1.5MB).
  */
 export async function extractTextFromUrl(url: string): Promise<string> {
+  const MAX_CONTENT_LENGTH = 1_500_000; // 1.5MB of markdown/text is huge for a single page
+
   try {
     const firecrawl = new FirecrawlApp({
       apiKey: env.FIRECRAWL_API_KEY || '',
@@ -34,6 +37,11 @@ export async function extractTextFromUrl(url: string): Promise<string> {
 
     if (!markdown) {
       return '';
+    }
+
+    if (markdown.length > MAX_CONTENT_LENGTH) {
+      console.warn(`[ContentExtractor] URL content truncated from ${markdown.length} to ${MAX_CONTENT_LENGTH}`);
+      return markdown.slice(0, MAX_CONTENT_LENGTH);
     }
 
     return markdown;

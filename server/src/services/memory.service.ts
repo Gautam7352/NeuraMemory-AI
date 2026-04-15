@@ -23,6 +23,8 @@ import {
 import { checkBeforeStore } from '../services/conflict-detection.service.js';
 import { env } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
+import { withTransaction } from '../lib/postgres.js';
+import { lockUser } from '../repositories/user.repository.js';
 import pLimit from 'p-limit';
 import type {
   PlainTextInput,
@@ -97,124 +99,129 @@ async function processText(
   }));
 
 
-  const limit = pLimit(5);
-  const results = await Promise.all(
-    points.map((point) => 
-      limit(async () => {
-        const incomingMemory: IncomingMemory = {
-          text: point.payload.text,
-          vector: point.vector,
-          kind: point.payload.kind,
-          importance: point.payload.importance,
-          source: point.payload.source,
-          createdAt: point.payload.createdAt,
-        };
+  // Use single transaction + row lock to serialize ingestion per user
+  return await withTransaction(async (client) => {
+    // 1. Lock this user's record so no other ingestion runs concurrently for them
+    await lockUser(client, userId);
 
-        try {
-          const candidates = await searchMemoriesScored(point.vector, userId, 10);
-          const resolution = await checkBeforeStore(
-            incomingMemory,
-            candidates,
-            env.CONFLICT_STRATEGY,
-          );
-          return { point, candidates, resolution };
-        } catch (err) {
-          console.warn(
-            '[processText] Point processing failed, falling back to simple store:',
-            err instanceof Error ? err.message : err,
-          );
-          return {
-            point,
-            candidates: [],
-            resolution: { action: 'store', pointsToDelete: [], pointToStore: incomingMemory } as const,
+    const limit = pLimit(5);
+    const results = await Promise.all(
+      points.map((point) => 
+        limit(async () => {
+          const incomingMemory: IncomingMemory = {
+            text: point.payload.text,
+            vector: point.vector,
+            kind: point.payload.kind,
+            importance: point.payload.importance,
+            source: point.payload.source,
+            createdAt: point.payload.createdAt,
           };
-        }
-      })
-    ),
-  );
 
-  const toUpsert: Array<{ vector: number[]; payload: StoredMemoryPayload }> = [];
-  const toDelete = new Set<string>();
-  const toUpdatePayloads: Array<{ ids: string[]; fields: Partial<StoredMemoryPayload> }> = [];
-
-  for (const { point, candidates, resolution } of results) {
-    switch (resolution.action) {
-      case 'store': {
-        toUpsert.push(point);
-        break;
-      }
-      case 'replace':
-      case 'merge': {
-        // Ownership check before adding to delete set
-        for (const id of resolution.pointsToDelete) {
-          const existing = candidates.find((c: any) => c.id === id);
-          if (existing && existing.payload.userId === userId) {
-            toDelete.add(id);
+          try {
+            const candidates = await searchMemoriesScored(point.vector, userId, 10);
+            const resolution = await checkBeforeStore(
+              incomingMemory,
+              candidates,
+              env.CONFLICT_STRATEGY,
+            );
+            return { point, candidates, resolution };
+          } catch (err) {
+            console.warn(
+              '[processText] Point processing failed, falling back to simple store:',
+              err instanceof Error ? err.message : err,
+            );
+            return {
+              point,
+              candidates: [],
+              resolution: { action: 'store', pointsToDelete: [], pointToStore: incomingMemory } as const,
+            };
           }
+        })
+      ),
+    );
+
+    const toUpsert: Array<{ vector: number[]; payload: StoredMemoryPayload }> = [];
+    const toDelete = new Set<string>();
+    const toUpdatePayloads: Array<{ ids: string[]; fields: Partial<StoredMemoryPayload> }> = [];
+
+    for (const { point, candidates, resolution } of results) {
+      switch (resolution.action) {
+        case 'store': {
+          toUpsert.push(point);
+          break;
         }
-        if (resolution.pointToStore) {
-          toUpsert.push({
-            vector: resolution.pointToStore.vector,
-            payload: { ...resolution.pointToStore, userId } as StoredMemoryPayload,
-          });
-        }
-        break;
-      }
-      case 'flag': {
-        if (resolution.pointToStore) {
-          toUpsert.push({
-            vector: resolution.pointToStore.vector,
-            payload: { ...resolution.pointToStore, userId } as StoredMemoryPayload,
-          });
-        }
-        if (resolution.conflictGroupId) {
-          const idsToFlag = candidates
-            .filter(
-              (c: any) =>
-                c.score >= env.SIMILARITY_THRESHOLD &&
-                c.payload.userId === userId,
-            )
-            .map((c: any) => c.id);
-          
-          if (idsToFlag.length > 0) {
-            toUpdatePayloads.push({
-              ids: idsToFlag,
-              fields: {
-                conflicted: true,
-                conflictGroupId: resolution.conflictGroupId,
-              },
+        case 'replace':
+        case 'merge': {
+          for (const id of resolution.pointsToDelete) {
+            const existing = candidates.find((c: any) => c.id === id);
+            if (existing && existing.payload.userId === userId) {
+              toDelete.add(id);
+            }
+          }
+          if (resolution.pointToStore) {
+            toUpsert.push({
+              vector: resolution.pointToStore.vector,
+              payload: { ...resolution.pointToStore, userId } as StoredMemoryPayload,
             });
           }
+          break;
         }
-        break;
+        case 'flag': {
+          if (resolution.pointToStore) {
+            toUpsert.push({
+              vector: resolution.pointToStore.vector,
+              payload: { ...resolution.pointToStore, userId } as StoredMemoryPayload,
+            });
+          }
+          if (resolution.conflictGroupId) {
+            const idsToFlag = candidates
+              .filter(
+                (c: any) =>
+                  c.score >= env.SIMILARITY_THRESHOLD &&
+                  c.payload.userId === userId,
+              )
+              .map((c: any) => c.id);
+            
+            if (idsToFlag.length > 0) {
+              toUpdatePayloads.push({
+                ids: idsToFlag,
+                fields: {
+                  conflicted: true,
+                  conflictGroupId: resolution.conflictGroupId,
+                },
+              });
+            }
+          }
+          break;
+        }
+        case 'skip':
+          break;
       }
-      case 'skip':
-        break;
     }
-  }
 
-  // Execute batch operations
-  if (toDelete.size > 0) {
-    await deleteMemoriesByIds(Array.from(toDelete));
-  }
-  if (toUpsert.length > 0) {
-    await upsertMemories(toUpsert);
-  }
-  for (const update of toUpdatePayloads) {
-    await updatePayloadFields(update.ids, update.fields);
-  }
+    // Execute batch operations
+    if (toDelete.size > 0) {
+      await deleteMemoriesByIds(Array.from(toDelete));
+    }
+    if (toUpsert.length > 0) {
+      await upsertMemories(toUpsert);
+    }
+    for (const update of toUpdatePayloads) {
+      await updatePayloadFields(update.ids, update.fields);
+    }
 
-  const memoriesStoredCount = toUpsert.length;
+    const memoriesStoredCount = toUpsert.length;
 
-  return {
-    success: true,
-    message: `Successfully processed document. Stored ${memoriesStoredCount} memory point(s).`,
-    data: {
-      memoriesStored: memoriesStoredCount,
-      semantic: extracted.semantic,
-      bubbles: extracted.bubbles,
-    },
-  };
+    return {
+      success: true,
+      message: `Successfully processed document. Stored ${memoriesStoredCount} memory point(s).`,
+      data: {
+        memoriesStored: memoriesStoredCount,
+        semantic: extracted.semantic,
+        bubbles: extracted.bubbles,
+      },
+    };
+  });
 }
 
 export async function processPlainText(

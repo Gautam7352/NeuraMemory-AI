@@ -12,6 +12,7 @@ import { AppError } from '../utils/AppError.js';
 import { env } from '../config/env.js';
 import type { IMessage } from '../types/chat.types.js';
 import type { StoredMemoryPayload } from '../types/memory.types.js';
+import { withBackoff } from '../utils/backoff.js';
 
 /**
  * Formats retrieved memories into a system prompt for the chat LLM.
@@ -90,22 +91,26 @@ export async function sendMessage(
 
   let assistantContent: string;
   try {
-    const completion = await client.chat.completions.create({
-      model: env.CHAT_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...recentMessages.map((m) => ({ role: m.role, content: m.content })),
-        { role: 'user', content: message },
-      ],
-    });
+    const completion = await withBackoff(() => 
+      client.chat.completions.create({
+        model: env.CHAT_MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...recentMessages.map((m) => ({ role: m.role, content: m.content })),
+          { role: 'user', content: message },
+        ],
+      }),
+      { maxRetries: 2, initialDelayMs: 1500 }
+    );
 
     assistantContent = completion.choices[0]?.message?.content ?? '';
     if (!assistantContent) {
       throw new Error('Empty response from LLM');
     }
-  } catch {
-    // h. If LLM call fails
-    throw new AppError(502, 'AI service unavailable. Please try again.');
+  } catch (err: any) {
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[ChatService] LLM request failed after retries:', msg);
+    throw new AppError(502, `AI service unavailable: ${msg}. Please try again.`);
   }
 
   // i. Persist both messages

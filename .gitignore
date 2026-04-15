@@ -52,4 +52,7 @@ qdrant_data/
 _agents/
 _agent/
 brain/
-server.tar
+# Archives
+*.tar
+*.zip
+*.gz

@@ -7,12 +7,39 @@ on:
     paths:
       - 'server/**'
       - 'docker-compose.cloud.yml'
-      - 'startup.sh'
+      - '.github/workflows/deploy.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'server/**'
       - '.github/workflows/deploy.yml'
 
 jobs:
+  test-build:
+    name: Server Build Check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install Dependencies
+        run: cd server && npm ci
+
+      - name: Build Server
+        run: cd server && npm run build
+
   deploy:
     name: Deploy API to Compute Engine
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: production

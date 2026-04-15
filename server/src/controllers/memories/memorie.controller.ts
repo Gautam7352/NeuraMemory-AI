@@ -77,7 +77,7 @@ export async function createFromDocument(
     ) {
       throw new AppError(
         415,
-        `Unsupported file type: ${file.mimetype}. Allowed: PDF, DOCX, TXT, MD.`,
+        `Unsupported file type: ${file.mimetype}. Allowed: PDF, DOCX, TXT, MD, CSV.`,
       );
     }
 

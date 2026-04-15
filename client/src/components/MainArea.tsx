@@ -69,7 +69,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   },
 ];
 
-const ACCEPTED_TYPES = '.pdf,.docx,.txt,.md';
+const ACCEPTED_TYPES = '.pdf,.docx,.txt,.md,.csv';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 // No manual auth headers needed; axios will attach the neura_token cookie automatically.
@@ -318,7 +318,7 @@ const MainArea = () => {
                         : 'Drop file here or click to browse'}
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
-                      PDF, DOCX, TXT, MD — max 10 MB
+                      PDF, DOCX, TXT, MD, CSV — max 10 MB
                     </p>
                   </div>
                   <input

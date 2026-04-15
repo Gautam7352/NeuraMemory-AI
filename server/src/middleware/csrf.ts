@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError.js';
 import { logger } from '../utils/logger.js';
+import { env } from '../config/env.js';
 
 /**
  * Custom CSRF middleware.
@@ -26,7 +27,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     cookieToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     res.cookie(CSRF_COOKIE_NAME, cookieToken, {
       httpOnly: false, // Must be readable by frontend to send back in header
-      secure: process.env.NODE_ENV === 'production',
+      secure: env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
     });

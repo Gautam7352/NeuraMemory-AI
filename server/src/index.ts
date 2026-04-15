@@ -43,7 +43,7 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'mcp-session-id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'mcp-session-id', 'x-csrf-token'],
   }),
 );
 

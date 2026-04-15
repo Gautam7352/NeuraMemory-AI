@@ -1,0 +1,62 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: neuramemory-server
+    restart: unless-stopped
+    env_file:
+      - ./server/.env.cloud
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    ports:
+      - "3000:3000"
+    networks:
+      - neuramemory-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: neuramemory-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: neuramemory
+      POSTGRES_PASSWORD: neuramemory
+      POSTGRES_DB: neuramemory
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    networks:
+      - neuramemory-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U neuramemory" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: neuramemory-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - neuramemory-network
+
+volumes:
+  postgres_data:
+    driver: local
+  qdrant_data:
+    driver: local
+
+networks:
+  neuramemory-network:
+    driver: bridge

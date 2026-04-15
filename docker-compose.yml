@@ -70,6 +70,16 @@ services:
       retries: 5
       start_period: 10s
 
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    container_name: neuramemory-crawl4ai
+    restart: unless-stopped
+    ports:
+      - "11235:11235"
+    shm_size: '1gb'
+    networks:
+      - neuramemory-network
+
 volumes:
   postgres_data:
     driver: local

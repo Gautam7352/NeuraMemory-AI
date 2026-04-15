@@ -14,6 +14,7 @@ import { AppError } from './AppError.js';
  * Fetches a URL and returns the main textual content.
  *
  * We use Firecrawl to extract high-quality markdown directly from the website.
+ * If Firecrawl fails, we automatically fall back to a self-hosted Crawl4AI instance.
  */
 export async function extractTextFromUrl(url: string): Promise<string> {
   try {
@@ -32,14 +33,9 @@ export async function extractTextFromUrl(url: string): Promise<string> {
     };
 
     if (response.success === false) {
-      throw new AppError(
-        422,
-        `Failed to scrape URL with Firecrawl: ${response.error || 'Unknown error'}`,
-      );
+      throw new Error(`Firecrawl scrape block: ${response.error || 'Unknown error'}`);
     }
 
-    // `response.markdown` is typically where the markdown format appears.
-    // In some older versions, it might be nested under `data`.
     const markdown =
       response.markdown || (response.data && response.data.markdown) || '';
 
@@ -49,12 +45,74 @@ export async function extractTextFromUrl(url: string): Promise<string> {
 
     return markdown;
   } catch (err) {
-    if (err instanceof AppError) throw err;
-
-    const message =
-      err instanceof Error ? err.message : 'Unknown error fetching URL';
-    throw new AppError(422, `Could not extract content from URL: ${message}`);
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[ContentExtractor] Firecrawl failed (${message}). Falling back to Crawl4AI...`);
+    
+    try {
+      return await extractTextWithCrawl4AI(url);
+    } catch (crawlErr) {
+      const crawlMsg = crawlErr instanceof Error ? crawlErr.message : String(crawlErr);
+      throw new AppError(422, `Could not extract content from URL (Both Firecrawl & Crawl4AI failed). Error: ${crawlMsg}`);
+    }
   }
+}
+
+/**
+ * Fallback scraper using self-hosted Crawl4AI Docker container.
+ */
+async function extractTextWithCrawl4AI(url: string): Promise<string> {
+  const baseUrl = process.env['CRAWL4AI_API_URL'] || 'http://localhost:11235';
+  
+  const submitRes = await fetch(`${baseUrl}/crawl/job`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ urls: url, priority: 10 }),
+  });
+  
+  if (!submitRes.ok) {
+    throw new Error(`Failed to submit job to Crawl4AI. HTTP: ${submitRes.status}`);
+  }
+  
+  const submitData = await submitRes.json() as any;
+  const taskId = submitData?.task_id;
+  
+  if (!taskId) {
+    throw new Error(`No task_id returned from Crawl4AI payload`);
+  }
+  
+  let attempts = 0;
+  const maxAttempts = 47; // 47 * 1.5s = ~70s
+  
+  while (attempts < maxAttempts) {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    attempts++;
+    
+    const statusRes = await fetch(`${baseUrl}/job/${taskId}`);
+    if (!statusRes.ok) {
+      console.warn(`[Crawl4AI] Status check failed: HTTP ${statusRes.status}`);
+      continue;
+    }
+    
+    const statusData = await statusRes.json() as any;
+    
+    if (statusData?.status === 'completed') {
+      // Result object is heavily nested in crawl4ai output sometimes
+      // Typically: statusData.result.markdown or statusData.result[0].markdown 
+      let markdown = '';
+      if (statusData.result) {
+        if (Array.isArray(statusData.result)) {
+           markdown = statusData.result[0]?.markdown || statusData.result[0]?.html || '';
+        } else {
+           markdown = statusData.result.markdown || statusData.result.html || '';
+        }
+      }
+      return markdown;
+    } else if (statusData?.status === 'failed') {
+      throw new Error(`Crawl4AI job explicitly failed: ${statusData.error || 'Unknown error'}`);
+    }
+  }
+  
+  throw new Error(`Crawl4AI job timed out after 70 seconds`);
 }
 
 // ---------------------------------------------------------------------------

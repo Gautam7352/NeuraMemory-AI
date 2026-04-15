@@ -51,6 +51,14 @@ services:
     networks:
       - neuramemory-network
 
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    container_name: neuramemory-crawl4ai
+    restart: unless-stopped
+    shm_size: '1gb'
+    networks:
+      - neuramemory-network
+
 volumes:
   postgres_data:
     driver: local

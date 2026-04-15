@@ -16,6 +16,13 @@ services:
       - "3000:3000"
     networks:
       - neuramemory-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          memory: 512M
 
   postgres:
     image: postgres:16-alpine
@@ -38,6 +45,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 512M
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -50,6 +62,13 @@ services:
       - qdrant_data:/qdrant/storage
     networks:
       - neuramemory-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 2560M
+        reservations:
+          memory: 512M
 
   crawl4ai:
     image: unclecode/crawl4ai:latest
@@ -58,6 +77,13 @@ services:
     shm_size: '1gb'
     networks:
       - neuramemory-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          memory: 1G
 
 volumes:
   postgres_data:

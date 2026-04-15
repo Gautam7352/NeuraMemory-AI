@@ -61,3 +61,16 @@ export const registerRateLimiter = rateLimit({
       : 'Too many registration attempts. Please try again in 1 hour.',
   ),
 });
+
+/**
+ * Limit memory processing requests (PDF, URL, Text extraction).
+ * Higher resource cost per request requires stricter limiting.
+ */
+export const memoryRateLimiter = rateLimit({
+  ...baseOptions,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isDevelopmentLike ? 10_000 : 30, // 30 requests per 15 minutes in prod
+  message: rateLimitResponse(
+    'Too many document processing requests. Please try again in 15 minutes.',
+  ),
+});

@@ -347,24 +347,28 @@ export async function deleteMemoriesByIds(ids: string[]): Promise<void> {
 }
 
 /**
- * Patch specific payload fields on an existing memory point without
+ * Patch specific payload fields on one or more existing memory points without
  * overwriting the rest of the payload (used to set `conflicted` /
  * `conflictGroupId` for the `flag` resolution strategy).
  *
  * Requirements: 7.6
  */
-export async function updateMemoryPayloadFields(
-  pointId: string,
+export async function updatePayloadFields(
+  pointIds: string[],
   fields: Partial<StoredMemoryPayload>,
 ): Promise<void> {
+  if (pointIds.length === 0) return;
+
   await ensureCollection();
   const client = getQdrantClient();
 
   await client.setPayload(COLLECTION_NAME, {
     payload: fields as Record<string, unknown>,
-    points: [pointId],
+    points: pointIds,
     wait: true,
   });
 
-  console.log(`[MemoryRepo] Updated payload fields on memory point ${pointId}.`);
+  console.log(
+    `[MemoryRepo] Updated payload fields on ${pointIds.length} memory point(s).`,
+  );
 }

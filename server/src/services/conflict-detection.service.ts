@@ -330,6 +330,8 @@ export async function filterRetrieved(
 // Pre-store Conflict Orchestration
 // ---------------------------------------------------------------------------
 
+import pLimit from 'p-limit';
+
 /**
  * Checks whether an incoming memory conflicts with existing candidates before
  * it is stored. Applies the configured resolution strategy when conflicts are
@@ -355,15 +357,21 @@ export async function checkBeforeStore(
     return { action: 'store', pointsToDelete: [], pointToStore: incoming };
   }
 
-  // Step 2: Check each similar candidate for contradiction via LLM
-  const confirmedConflicts: Array<{ candidate: ScoredMemory; analysis: ConflictAnalysis }> = [];
+  // Step 2: Check similar candidates for contradiction via LLM in parallel (Capped for Free Tier)
+  const limit = pLimit(5);
+  const analyses = await Promise.all(
+    similar.map((candidate) => 
+      limit(async () => {
+        const analysis = await detectConflict(incoming.text, candidate.payload.text);
+        return { candidate, analysis };
+      })
+    ),
+  );
 
-  for (const candidate of similar) {
-    const analysis = await detectConflict(incoming.text, candidate.payload.text);
-    if (analysis.isConflict && analysis.confidence >= CONFLICT_CONFIDENCE_THRESHOLD) {
-      confirmedConflicts.push({ candidate, analysis });
-    }
-  }
+  const confirmedConflicts = analyses.filter(
+    ({ analysis }) =>
+      analysis.isConflict && analysis.confidence >= CONFLICT_CONFIDENCE_THRESHOLD,
+  );
 
   // Step 3: No true contradictions — check for near-duplicates
   if (confirmedConflicts.length === 0) {

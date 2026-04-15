@@ -22,6 +22,11 @@ import {
   deleteMemoryById,
   updateMemoryById,
 } from '../controllers/memories/memorie.controller.js';
+import {
+  loginRateLimiter,
+  registerRateLimiter,
+  memoryRateLimiter,
+} from '../middleware/rateLimit.js';
 import { documentUpload } from '../middleware/upload.js';
 import { requireAuth } from '../middleware/auth/requireAuth.js';
 
@@ -35,13 +40,13 @@ router.use(requireAuth);
 // ---------------------------------------------------------------------------
 
 /** Plain text → extract → embed → store */
-router.post('/text', createFromText);
+router.post('/text', memoryRateLimiter, createFromText);
 
 /** URL / link → fetch content → extract → embed → store */
-router.post('/link', createFromLink);
+router.post('/link', memoryRateLimiter, createFromLink);
 
 /** Document upload → parse → extract → embed → store */
-router.post('/document', documentUpload.single('file'), createFromDocument);
+router.post('/document', memoryRateLimiter, documentUpload.single('file'), createFromDocument);
 
 // ---------------------------------------------------------------------------
 // Read / Delete

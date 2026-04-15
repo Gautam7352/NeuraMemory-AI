@@ -18,7 +18,7 @@ import {
   updateMemoryPoint,
   searchMemoriesScored,
   deleteMemoriesByIds,
-  updateMemoryPayloadFields,
+  updatePayloadFields,
 } from '../repositories/memory.repository.js';
 import { checkBeforeStore } from '../services/conflict-detection.service.js';
 import { env } from '../config/env.js';
@@ -96,100 +96,120 @@ async function processText(
     } satisfies StoredMemoryPayload,
   }));
 
-  let memoriesStoredCount = 0;
+import pLimit from 'p-limit';
 
-  for (const point of points) {
-    const incomingMemory: IncomingMemory = {
-      text: point.payload.text,
-      vector: point.vector,
-      kind: point.payload.kind,
-      importance: point.payload.importance,
-      source: point.payload.source,
-      createdAt: point.payload.createdAt,
-    };
+  const limit = pLimit(5);
+  const results = await Promise.all(
+    points.map((point) => 
+      limit(async () => {
+        const incomingMemory: IncomingMemory = {
+          text: point.payload.text,
+          vector: point.vector,
+          kind: point.payload.kind,
+          importance: point.payload.importance,
+          source: point.payload.source,
+          createdAt: point.payload.createdAt,
+        };
 
-    let candidates: ScoredMemory[] = [];
-    try {
-      candidates = await searchMemoriesScored(point.vector, userId, 10);
-    } catch (err) {
-      console.warn(
-        '[processText] Qdrant search failed, skipping conflict detection for this point:',
-        err instanceof Error ? err.message : err,
-      );
-      // Fail-open: upsert normally
-      await upsertMemories([point]);
-      memoriesStoredCount++;
-      continue;
-    }
+        try {
+          const candidates = await searchMemoriesScored(point.vector, userId, 10);
+          const resolution = await checkBeforeStore(
+            incomingMemory,
+            candidates,
+            env.CONFLICT_STRATEGY,
+          );
+          return { point, candidates, resolution };
+        } catch (err) {
+          console.warn(
+            '[processText] Point processing failed, falling back to simple store:',
+            err instanceof Error ? err.message : err,
+          );
+          return {
+            point,
+            candidates: [],
+            resolution: { action: 'store', pointsToDelete: [], pointToStore: incomingMemory } as const,
+          };
+        }
+      })
+    ),
+  );
 
-    const resolution = await checkBeforeStore(incomingMemory, candidates, env.CONFLICT_STRATEGY);
+  const toUpsert: Array<{ vector: number[]; payload: StoredMemoryPayload }> = [];
+  const toDelete = new Set<string>();
+  const toUpdatePayloads: Array<{ ids: string[]; fields: Partial<StoredMemoryPayload> }> = [];
 
+  for (const { point, candidates, resolution } of results) {
     switch (resolution.action) {
       case 'store': {
-        await upsertMemories([point]);
-        memoriesStoredCount++;
+        toUpsert.push(point);
         break;
       }
       case 'replace':
       case 'merge': {
-        // Ownership check before delete
+        // Ownership check before adding to delete set
         for (const id of resolution.pointsToDelete) {
           const existing = candidates.find((c) => c.id === id);
           if (existing && existing.payload.userId === userId) {
-            await deleteMemoriesByIds([id]);
-          } else {
-            console.warn(
-              `[processText] Skipping delete of point ${id}: ownership mismatch or not found`,
-            );
+            toDelete.add(id);
           }
         }
         if (resolution.pointToStore) {
-          await upsertMemories([
-            {
-              vector: resolution.pointToStore.vector,
-              payload: { ...resolution.pointToStore, userId } as StoredMemoryPayload,
-            },
-          ]);
-          memoriesStoredCount++;
+          toUpsert.push({
+            vector: resolution.pointToStore.vector,
+            payload: { ...resolution.pointToStore, userId } as StoredMemoryPayload,
+          });
         }
         break;
       }
       case 'flag': {
         if (resolution.pointToStore) {
-          await upsertMemories([
-            {
-              vector: resolution.pointToStore.vector,
-              payload: { ...resolution.pointToStore, userId } as StoredMemoryPayload,
-            },
-          ]);
-          memoriesStoredCount++;
+          toUpsert.push({
+            vector: resolution.pointToStore.vector,
+            payload: { ...resolution.pointToStore, userId } as StoredMemoryPayload,
+          });
         }
-        // Mark existing conflicting points
         if (resolution.conflictGroupId) {
-          for (const candidate of candidates) {
-            if (
-              candidate.score >= env.SIMILARITY_THRESHOLD &&
-              candidate.payload.userId === userId
-            ) {
-              await updateMemoryPayloadFields(candidate.id, {
+          const idsToFlag = candidates
+            .filter(
+              (c) =>
+                c.score >= env.SIMILARITY_THRESHOLD &&
+                c.payload.userId === userId,
+            )
+            .map((c) => c.id);
+          
+          if (idsToFlag.length > 0) {
+            toUpdatePayloads.push({
+              ids: idsToFlag,
+              fields: {
                 conflicted: true,
                 conflictGroupId: resolution.conflictGroupId,
-              });
-            }
+              },
+            });
           }
         }
         break;
       }
-      case 'skip': {
-        // Near-duplicate: do not store
+      case 'skip':
         break;
-      }
     }
   }
 
+  // Execute batch operations
+  if (toDelete.size > 0) {
+    await deleteMemoriesByIds(Array.from(toDelete));
+  }
+  if (toUpsert.length > 0) {
+    await upsertMemories(toUpsert);
+  }
+  for (const update of toUpdatePayloads) {
+    await updatePayloadFields(update.ids, update.fields);
+  }
+
+  const memoriesStoredCount = toUpsert.length;
+
   return {
     success: true,
-    message: `Successfully stored ${memoriesStoredCount} memor${memoriesStoredCount === 1 ? 'y' : 'ies'}.`,
+    message: `Successfully processed document. Stored ${memoriesStoredCount} memory point(s).`,
     data: {
       memoriesStored: memoriesStoredCount,
       semantic: extracted.semantic,

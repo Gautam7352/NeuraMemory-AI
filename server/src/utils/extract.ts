@@ -10,6 +10,7 @@ import systemPrompt from './systemPrompt.js';
 import { ExtractedMemories } from '../types/memory.types.js';
 import { splitIntoChunks } from './chunking.js';
 import { withBackoff } from './backoff.js';
+import { logger } from './logger.js';
 
 /** The model to use for extraction — tunable via env in the future */
 const EXTRACTION_MODEL = 'google/gemini-flash-1.5';

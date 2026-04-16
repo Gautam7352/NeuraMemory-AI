@@ -26,9 +26,11 @@ app.use(express.json({ limit: '200kb' }));
 // ---------------------------------------------------------------------------
 // CORS Configuration
 // ---------------------------------------------------------------------------
-const allowedOrigins = env.ALLOWED_ORIGINS.split(',')
-  .map((o) => o.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  ...env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()),
+  'https://neuramemory-server-31080282917.us-central1.run.app',
+  'https://neuramemory-server-6zfpnl4vda-uc.a.run.app',
+].filter(Boolean);
 
 app.use(
   cors({

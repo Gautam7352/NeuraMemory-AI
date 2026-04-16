@@ -10,7 +10,7 @@ import {
 import { AuthPayload, AuthResponse } from '../types/auth.types.js';
 import { AppError } from '../utils/AppError.js';
 
-const SALT_ROUNDS = 12;
+const SALT_ROUNDS = 10;
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password.';
 
 /**

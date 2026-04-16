@@ -28,10 +28,14 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     res.cookie(CSRF_COOKIE_NAME, cookieToken, {
       httpOnly: false, // Must be readable by frontend to send back in header
       secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
     });
   }
+
+  // Set the CSRF token in a header so the frontend can read it 
+  // (since it can't read cookies from a different domain like neuramemory-server.run.app)
+  res.setHeader(CSRF_HEADER_NAME, cookieToken);
 
   // 2. Validate for state-changing methods
   const isStateChanging = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method);

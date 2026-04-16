@@ -25,6 +25,7 @@ import { env } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
 import { withTransaction } from '../lib/postgres.js';
 import { lockUser } from '../repositories/user.repository.js';
+import { logger } from '../utils/logger.js';
 import pLimit from 'p-limit';
 import type {
   PlainTextInput,

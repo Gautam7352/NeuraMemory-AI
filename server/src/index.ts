@@ -121,28 +121,33 @@ function registerProcessHandlers(): void {
 async function main(): Promise<void> {
   logStartupBanner();
 
-  try {
-    // Ensure DB Connectivity
-    const { checkConnectivity } = await import('./lib/postgres.js');
-    const isDbConnected = await checkConnectivity();
-    if (!isDbConnected) {
-      throw new Error('Could not connect to PostgreSQL. Ensure the local service is running on port 5432.');
-    }
-
-    await ensureDatabaseSchema();
-    logger.info('[Startup] Database connectivity and schema verified.');
-
-    const qdrant = getQdrantClient();
-    await qdrant.getCollections();
-    logger.info('[Startup] Qdrant connectivity verified.');
-  } catch (err) {
-    logger.error('[Startup] Critical dependency check failed:', err);
-    if (env.NODE_ENV === 'production') process.exit(1);
-  }
-
   const port = Number(env.PORT);
   server = app.listen(port, () => {
-    logger.info(`[Startup] Server is ready on port ${port}`);
+    logger.info(`[Startup] Server is listening on port ${port}. Starting dependency initialization...`);
+
+    // Run dependency verification in the background to avoid blocking the Startup Probe
+    (async () => {
+      try {
+        // Ensure DB Connectivity
+        const { checkConnectivity } = await import('./lib/postgres.js');
+        const isDbConnected = await checkConnectivity();
+        if (!isDbConnected) {
+          throw new Error('Could not connect to PostgreSQL. Ensure the local service is running on port 5432.');
+        }
+
+        await ensureDatabaseSchema();
+        logger.info('[Startup] Database connectivity and schema verified.');
+
+        const qdrant = getQdrantClient();
+        await qdrant.getCollections();
+        logger.info('[Startup] Qdrant connectivity verified.');
+        logger.info('🚀 NeuraMemory-AI is fully operational.');
+      } catch (err) {
+        logger.error('[Startup] Initialization failed:', err);
+        // We don't exit in production here, allowing the health check to report the failure 
+        // and standard retries to happen while keeping the process alive for debug/logs.
+      }
+    })();
   });
 }
 

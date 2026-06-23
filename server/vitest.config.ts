@@ -2,10 +2,10 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    globals: true,
     environment: 'node',
-    globals: false,
+    setupFiles: ['./test/setup.ts'],
     include: ['src/**/*.test.ts'],
-    // Use pool: 'forks' for better ESM support
-    pool: 'forks',
+    exclude: ['dist/**/*.test.js', 'node_modules/**/*'],
   },
 });

@@ -23,7 +23,7 @@ NeuraMemory-AI uses Docker Compose to orchestrate multiple services:
 
 - **Server**: Node.js/TypeScript backend API
 - **Client**: React/Vite frontend application
-- **MongoDB**: Document database for user data
+- **PostgreSQL**: Relational database for user data
 - **Qdrant**: Vector database for semantic search
 
 The project provides two Docker Compose configurations:
@@ -51,7 +51,7 @@ docker compose version
 
 - **RAM**: Minimum 4GB available
 - **Disk**: ~2GB for images and volumes
-- **Ports**: 3000, 5173, 6333, 6334, 27017 must be available
+- **Ports**: 3000, 5173, 6333, 6334, 5432 must be available
 
 ---
 
@@ -62,14 +62,14 @@ docker compose version
 │                    Docker Network                       │
 │                (neuramemory-network)                    │
 │                                                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐ │
-│  │  Client  │  │  Server  │  │ MongoDB  │  │ Qdrant │ │
-│  │  :5173   │→ │  :3000   │→ │  :27017  │  │ :6333  │ │
-│  └──────────┘  └──────────┘  └──────────┘  └────────┘ │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+│  ┌──────────┐  ┌──────────┐  ┌────────────┐  ┌────────┐ │
+│  │  Client  │  │  Server  │  │ PostgreSQL │  │ Qdrant │ │
+│  │  :5173   │→ │  :3000   │→ │   :5432    │  │ :6333  │ │
+│  └──────────┘  └──────────┘  └────────────┘  └────────┘ │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
          ↓              ↓             ↓            ↓
-    Port 5173      Port 3000    Port 27017   Port 6333
+    Port 5173      Port 3000     Port 5432    Port 6333
 ```
 
 ---
@@ -100,7 +100,7 @@ docker compose logs -f
 Access the application:
 - **Frontend**: http://localhost:5173
 - **API**: http://localhost:3000
-- **MongoDB**: localhost:27017
+- **PostgreSQL**: localhost:5432
 - **Qdrant**: http://localhost:6333
 
 ### Development
@@ -139,8 +139,8 @@ PORT=3000
 NODE_ENV=production
 JWT_EXPIRES_IN=7d
 
-# MongoDB - Use container name (DNS resolution)
-MONGODB_URI=mongodb://mongodb:27017/neuramemory
+# PostgreSQL - Use container name (DNS resolution)
+DATABASE_URL=postgresql://neuramemory:neuramemory@postgres:5432/neuramemory
 
 # Qdrant - Use container name
 QDRANT_URL=http://qdrant:6333
@@ -168,7 +168,7 @@ Expected output:
 ```
 NAME                    STATUS         PORTS
 neuramemory-client      Up 2 minutes   0.0.0.0:5173->5173/tcp
-neuramemory-mongodb     Up 2 minutes   0.0.0.0:27017->27017/tcp
+neuramemory-postgres    Up 2 minutes   0.0.0.0:5432->5432/tcp
 neuramemory-qdrant      Up 2 minutes   0.0.0.0:6333-6334->6333-6334/tcp
 neuramemory-server      Up 2 minutes   0.0.0.0:3000->3000/tcp
 ```
@@ -179,8 +179,8 @@ neuramemory-server      Up 2 minutes   0.0.0.0:3000->3000/tcp
 # Check server health
 curl http://localhost:3000/api/v1/login
 
-# Check MongoDB
-docker exec neuramemory-mongodb mongosh --eval "db.adminCommand('ping')"
+# Check PostgreSQL
+docker exec neuramemory-postgres pg_isready -U neuramemory
 
 # Check Qdrant
 curl http://localhost:6333/health
@@ -260,7 +260,7 @@ docker compose logs -f server
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `MONGODB_URI` | MongoDB connection string | `mongodb://mongodb:27017/neuramemory` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://neuramemory:neuramemory@postgres:5432/neuramemory` |
 | `QDRANT_URL` | Qdrant server URL | `http://qdrant:6333` |
 | `OPENROUTER_API_KEY` | OpenRouter API key | `sk-or-v1-...` |
 | `JWT_SECRET` | JWT signing secret (≥32 chars) | `random-string-32-chars-min` |
@@ -281,14 +281,14 @@ docker compose logs -f server
 
 ```env
 # BAD - Won't work inside containers
-MONGODB_URI=mongodb://localhost:27017/neuramemory
+DATABASE_URL=postgresql://neuramemory:neuramemory@localhost:5432/neuramemory
 ```
 
 **✅ Use service names** (Docker DNS):
 
 ```env
 # GOOD - Docker resolves service names
-MONGODB_URI=mongodb://mongodb:27017/neuramemory
+DATABASE_URL=postgresql://neuramemory:neuramemory@postgres:5432/neuramemory
 QDRANT_URL=http://qdrant:6333
 ```
 
@@ -298,14 +298,14 @@ QDRANT_URL=http://qdrant:6333
 
 ```bash
 curl http://localhost:3000/api/v1/login
-mongosh mongodb://localhost:27017
+psql postgresql://neuramemory:neuramemory@localhost:5432/neuramemory
 ```
 
 **From inside containers** → Use service names:
 
 ```javascript
-// Inside server container
-const client = new MongoClient('mongodb://mongodb:27017');
+// Inside server container — uses pg Pool from DATABASE_URL
+import { getPool } from './lib/postgres.js';
 ```
 
 ---
@@ -319,7 +319,7 @@ const client = new MongoClient('mongodb://mongodb:27017');
 docker compose up -d
 
 # Start specific service
-docker compose up -d mongodb
+docker compose up -d postgres
 
 # Start with logs
 docker compose up
@@ -388,8 +388,8 @@ docker compose exec server sh
 # Run npm command
 docker compose exec server npm run build
 
-# MongoDB shell
-docker compose exec mongodb mongosh
+# PostgreSQL shell
+docker compose exec postgres psql -U neuramemory
 
 # Check Node.js version
 docker compose exec server node --version
@@ -417,20 +417,20 @@ docker network ls
 ### Data Management
 
 ```bash
-# Backup MongoDB
-docker compose exec mongodb mongodump --out=/data/backup
+# Backup PostgreSQL
+docker compose exec -T postgres pg_dump -U neuramemory neuramemory > backup.sql
 
-# Restore MongoDB
-docker compose exec mongodb mongorestore /data/backup
+# Restore PostgreSQL
+docker compose exec -T postgres psql -U neuramemory neuramemory < backup.sql
 
 # List volumes
 docker volume ls
 
 # Inspect volume
-docker volume inspect neuramemory-ai_mongodb_data
+docker volume inspect neuramemory-ai_postgres_data
 
 # Backup volume (example)
-docker run --rm -v neuramemory-ai_mongodb_data:/data -v $(pwd):/backup alpine tar czf /backup/mongodb-backup.tar.gz -C /data .
+docker run --rm -v neuramemory-ai_postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/postgres-backup.tar.gz -C /data .
 ```
 
 ---
@@ -474,13 +474,13 @@ docker compose logs server
 
 **Fix:** Edit `server/.env` and add valid `JWT_SECRET`.
 
-**Check MongoDB connection:**
+**Check PostgreSQL connection:**
 
 ```bash
-# Test MongoDB
-docker compose exec mongodb mongosh --eval "db.adminCommand('ping')"
+# Test PostgreSQL
+docker compose exec postgres pg_isready -U neuramemory
 
-# Should return: { ok: 1 }
+# Should return: accepting connections
 ```
 
 ### Build Failures
@@ -507,18 +507,18 @@ docker compose build --no-cache
 
 ### Database Connection Issues
 
-**MongoDB won't connect:**
+**PostgreSQL won't connect:**
 
 ```bash
-# Check if MongoDB is running
-docker compose ps mongodb
+# Check if PostgreSQL is running
+docker compose ps postgres
 
-# Check MongoDB logs
-docker compose logs mongodb
+# Check PostgreSQL logs
+docker compose logs postgres
 
 # Verify connection string in .env
-grep MONGODB_URI server/.env
-# Should be: mongodb://mongodb:27017/neuramemory (not localhost!)
+grep DATABASE_URL server/.env
+# Should be: postgresql://neuramemory:neuramemory@postgres:5432/neuramemory (not localhost!)
 ```
 
 **Qdrant won't connect:**
@@ -589,7 +589,7 @@ docker compose up -d --build
 
 **Health Check**: None (TODO)
 
-**Dependencies**: MongoDB, Qdrant
+**Dependencies**: PostgreSQL, Qdrant
 
 ### Client (Frontend)
 
@@ -603,19 +603,19 @@ docker compose up -d --build
 
 **Dependencies**: Server
 
-### MongoDB
+### PostgreSQL
 
-**Image**: `mongo:latest`
+**Image**: `postgres:16-alpine`
 
 **Exposed Ports**:
-- `27017` - MongoDB protocol
+- `5432` - PostgreSQL protocol
 
 **Data Persistence**: 
-- Volume: `mongodb_data` → `/data/db`
+- Volume: `postgres_data` → `/var/lib/postgresql/data`
 
 **Health Check**:
 ```bash
-mongosh --eval "db.adminCommand('ping')"
+pg_isready -U neuramemory
 ```
 
 **Default Database**: `neuramemory`
@@ -683,13 +683,13 @@ docker compose logs -f | tee application.log
 #!/bin/bash
 # backup.sh
 DATE=$(date +%Y%m%d_%H%M%S)
-docker compose exec -T mongodb mongodump --archive > "backups/mongodb_${DATE}.archive"
+docker compose exec -T postgres pg_dump -U neuramemory neuramemory > "backups/postgres_${DATE}.sql"
 ```
 
 **Volume backups**:
 
 ```bash
-docker run --rm -v neuramemory-ai_mongodb_data:/data -v $(pwd)/backups:/backup alpine tar czf /backup/mongodb_${DATE}.tar.gz -C /data .
+docker run --rm -v neuramemory-ai_postgres_data:/data -v $(pwd)/backups:/backup alpine tar czf /backup/postgres_${DATE}.tar.gz -C /data .
 ```
 
 ### Scaling
@@ -709,7 +709,7 @@ docker compose up -d --scale server=3
 
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
 - [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
-- [MongoDB Docker Hub](https://hub.docker.com/_/mongo)
+- [PostgreSQL Docker Hub](https://hub.docker.com/_/postgres)
 - [Qdrant Documentation](https://qdrant.tech/documentation/)
 
 ---

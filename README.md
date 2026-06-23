@@ -1,213 +1,104 @@
-# NeuraMemory-AI
+# NeuraMemory AI: Persistent Memory Layer for the AI age
+![Deployment Status](https://github.com/Gautam7352/NeuraMemory-AI/actions/workflows/deploy.yml/badge.svg)
 
-## {Need to be updated after v0 is done}
 
-<div align="center">
-  <a href="https://github.com/Gautam7352/NeuraMemory-AI">
-    <img src="[![alt text](image.png)]" alt="Logo" width="80" height="80">
-  </a>
+"Intelligence without memory is just a series of disconnected thoughts."
 
-  <h3 align="center">NeuraMemory-AI</h3>
+NeuraMemory AI is an open-source, high-performance memory engine designed to give Large Language Models (LLMs) a persistent, cross-session, and model-agnostic long-term memory. It acts like a “second brain,” helping you save, organize, and find information easily, while understanding context, linking related ideas, and giving smart summaries and insights.
 
-  <p align="center">
-    An intelligent system designed to augment human memory and knowledge management using advanced AI.
-    <br />
-    <a href="https://github.com/Gautam7352/NeuraMemory-AI/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/Gautam7352/NeuraMemory-AI/issues">Request Feature</a>
-  </p>
-</div>
+**Presentation link:** https://neuramemory-ai-ea5s372.gamma.site/
 
-<!-- BADGES -->
-<div align="center">
-  <a href="[Link to license]"><img src="https://img.shields.io/github/license/[Your GitHub Username]/[Your Repo Name]?style=for-the-badge" alt="License"></a>
-  <a href="[Link to deployed project or website]"><img src="https://img.shields.io/badge/Project-Live-brightgreen?style=for-the-badge" alt="Project Status"></a>
-</div>
+**Demo Link:** https://youtu.be/eSowmleQzQY?si=iYT1t2C6Sxl-blqX
 
----
+**Live Link:** https://neura-memory-ai.vercel.app/
 
-## Table of Contents
+## The Problem
 
-- About The Project
-  - Built With
-- Getting Started
-  - Prerequisites
-  - Installation
-- Usage
-- Roadmap
-- Contributing
-- License
-- Contact
-- Acknowledgments
+Currently, interacting with AI feels like meeting a brilliant person who gets a concussion every time you close the chat window. This creates three critical failures in the developer and user experience:
 
----
+1. **The Context Window "Token Tax"**  
+   Every time you start a new session, you have to re-feed the AI your project structure, coding preferences, or personal history. This wastes thousands of tokens and real money on redundant processing. Current context windows are growing, but they are still a "leaky bucket". Once the limit is reached, the oldest (and often most important) context is discarded.
 
-## About The Project
+2. **The Model Silo Problem**  
+   Your "relationship" with an AI is trapped inside a single platform. If you move from Gemini to Claude or a local Llama model, you lose all previous context. There is no interoperable layer for personal or professional AI memory.
 
-[![Product Name Screen Shot][product-screenshot]]([Link to your project website or demo])
+3. **The "Grounding" Gap**  
+   Generic LLMs lack "Personal Grounding." They know how to write code, but they don't know your specific project's architectural quirks unless you explicitly tell them every single time.
 
-**NeuraMemory-AI** is a project that explores the intersection of artificial intelligence and human cognition. It aims to create a "second brain" that helps users capture, organize, and retrieve information effortlessly. By leveraging state-of-the-art language models and memory-augmented neural networks, NeuraMemory-AI can understand context, make connections between disparate pieces of information, and provide intelligent summaries and insights.
+## What NeuraMemory-AI Solves
 
-Whether you're a student, a researcher, or a lifelong learner, NeuraMemory-AI is designed to enhance your cognitive abilities and streamline your knowledge workflow.
+1.  **Massive Token Efficiency**  
+    By using Retrieval-Augmented Generation (RAG) specifically for personal history, NeuraMemory can represent years of interaction in just a few hundred tokens. It solves the "Lost-in-the-Middle" phenomenon by ensuring only the most semantically relevant data is placed in the LLM's "Working Memory."
 
-### Key Features:
+2.  **User-Centric Sovereignty**  
+    In a world where big tech companies want to own your "digital twin," NeuraMemory is Local-First. You own your memory database. It can be hosted on your local machine or a private server, ensuring that your "Personal Context" never becomes someone else's training data.
 
-- **Intelligent Note-Taking:** Capture thoughts and ideas in natural language.
-- **Automatic Organization:** The AI automatically tags, categorizes, and links related notes.
-- **Semantic Search:** Find information based on meaning and context, not just keywords.
-- **Knowledge Graph:** Visualize the connections between your ideas.
-- **Personalized Summaries:** Get AI-generated summaries of your notes and documents.
+3.  **Model Agnosticism**  
+    NeuraMemory is designed with a Universal API. Whether you are using a Go-based backend, a React frontend, or a CLI tool, you can hook into the same memory stream. It bridges the gap between different AI providers, making your personal context portable.
 
-### Built With
+4.  **Hierarchical Memory Management**  
+    Unlike simple databases, NeuraMemory distinguishes between:
 
-This project is built with a modern stack of technologies to deliver a robust and scalable solution.
+        - **Episodic Memory:**
+         Specific events (e.g., "We fixed the bug in the auth controller yesterday").
+        - **Semantic Memory:**
+        General facts (e.g., "I prefer using functional programming patterns in TypeScript").
+        - **Procedural Memory:**
+        How you like things done (e.g., "Always use snake_case for database schemas").
 
-- [![TypeScript][TypeScript.org]][TypeScript-url]
-- [![Node.js][Node.js.org]][Node.js-url]
-- [![Express.js][Express.js.org]][Express-url]
+## Key Features
 
----
+- **Multi-Modal Interaction:** Users can interact via text, links, files, and documents.
+- **Memory Management:**
+  - All chats are stored as memories.
+  - Memories are displayed as cards on the **Manage Memory** page.
+  - Users can **add, update, or delete memories** easily.
+- **Conversational Memory:** Talk to your stored memories anytime.
+- **Central AI Hub:** Acts as a unified interface connecting multiple AI tools and services.
 
-## Getting Started
+## How to Run
 
-Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
+### Quick commands (Make + Docker)
 
-### Prerequisites
+```bash
+make dev          # Start development environment
+make dev-down     # Stop development environment
+make prod-up      # Start production services
+make prod-down    # Stop production services
+make logs         # View logs
+make clean        # Stop and remove containers
+```
 
-You'll need to have the following software installed on your system.
+```bash
+# Development
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
-- **Node.js and npm** (for local development)
-
-  ```sh
-  npm install npm@latest -g
-  ```
-
-- **Docker and Docker Compose** (for containerized deployment)
-  ```sh
-  docker --version
-  docker compose version
-  ```
-
-### Installation
-
-Choose either Docker (recommended) or local installation:
-
-#### Option 1: Docker Deployment (Recommended)
-
-1.  **Clone the repository**
-
-    ```sh
-    git clone https://github.com/Gautam7352/NeuraMemory-AI.git
-    cd NeuraMemory-AI
-    ```
-
-2.  **Configure environment variables**
-
-    ```sh
-    cp server/.env.example server/.env
-    # Edit server/.env with your API keys and settings
-    ```
-
-3.  **Start all services**
-
-    ```sh
-    # Production
-    docker compose up -d
-
-    # Development (with hot-reload)
-    docker compose -f docker-compose.yml -f docker-compose.dev.yml up
-    ```
-
-4.  **Access the application**
-    - Frontend: http://localhost:5173
-    - API: http://localhost:3000
-
-See [DOCKER.md](DOCKER.md) for complete Docker deployment guide.
-
-#### Option 2: Local Installation
-
-1.  **Clone the repository**
-
-    ```sh
-    git clone https://github.com/Gautam7352/NeuraMemory-AI.git
-    cd NeuraMemory-AI
-    ```
-
-2.  **Install server dependencies**
-
-    ```sh
-    cd server
-    npm install
-    ```
-
-3.  **Install client dependencies**
-
-    ```sh
-    cd ../client
-    npm install
-    ```
-
-4.  **Configure Environment Variables**
-    Create `server/.env` with required configuration:
-
-    ```env
-    MONGODB_URI=mongodb://localhost:27017/neuramemory
-    QDRANT_URL=http://localhost:6333
-    OPENROUTER_API_KEY=your-api-key
-    JWT_SECRET=random-string-at-least-32-characters
-    ```
-
-5.  **Start MongoDB and Qdrant** (required)
-    ```sh
-    # Using Docker
-    docker compose up -d mongodb qdrant
-    ```
-
----
-
-## Usage
-
-### Running with Docker
-
-```sh
-# Start all services
+# Production
 docker compose up -d
+docker compose down
 
 # View logs
 docker compose logs -f
-
-# Stop all services
-docker compose down
 ```
 
-### Running Locally
+### Local setup
 
-1.  **Start the Backend Server**
+```bash
+git clone https://github.com/Gautam7352/NeuraMemory-AI.git
 
-    ```sh
-    cd server
-    npm run dev
-    ```
+cd NeuraMemory-AI
 
-2.  **Start the Frontend** (in another terminal)
+cp server/.env.example server/.env
 
-    ```sh
-    cd client
-    npm run dev
-    ```
+cp client/.env.example client/.env.production
 
-3.  **Access the application**
-    - Frontend: http://localhost:5173
-    - API: http://localhost:3000
-
-### Testing the API
-
-Run the comprehensive test suite:
-
-```sh
-cd server
-./test.sh
+make dev
 ```
+
+Endpoints:
+
+- Frontend: `http://localhost:5173`
+- API: `http://localhost:3000`
 
 For more details, see:
 
@@ -215,68 +106,66 @@ For more details, see:
 - [API Documentation](server/docs/API.md)
 - [Docker Guide](DOCKER.md)
 
----
+### Environment variables
 
-## Roadmap
+```bash
+cp server/.env.example server/.env
+cp client/.env.example client/.env.production
+```
 
-We have an exciting roadmap for NeuraMemory-AI! Here are some of the features we're planning to add:
+## Connect MCP in Claude Desktop
 
-- [ ] Mobile Application (iOS & Android)
-- [ ] Browser Extension for web clipping
-- [ ] Integration with other apps (Notion, Obsidian, etc.)
-- [ ] Advanced team collaboration features
+**Paste in the claude desktop config:**
 
-See the [open issues]([Link to your project repository]/issues) for a full list of proposed features (and known issues).
+```json
+{
+  "mcpServers": {
+    "memories": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://neura-memory-ai.vercel.app/api/v1/mcp?apiKey={YOUR_API_KEY}"
+      ]
+    }
+  },
+  "preferences": {
+    "coworkScheduledTasksEnabled": false,
+    "ccdScheduledTasksEnabled": false,
+    "sidebarMode": "chat",
+    "coworkWebSearchEnabled": true
+  }
+}
+```
 
----
+## Project Status 🚀
 
-## Contributing
-
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
-
-Please read `CONTRIBUTING.md` for details on our code of conduct and the process for submitting pull requests to us.
-
----
-
-## License
-
-Distributed under the MIT License. See `LICENSE.txt` for more information.
-
----
-
-## Contact
-
-[Your Name] - [@YourTwitterHandle] - [your.email@example.com]
-
-Project Link: [https://github.com/[Your GitHub Username]/NeuraMemory-AI](https://github.com/[Your GitHub Username]/NeuraMemory-AI)
+NeuraMemory-AI is currently in **active development** with a stable core. It is deployed as a distributed system:
+- **Frontend**: Hosted on Vercel for high performance and global edge delivery.
+- **Backend**: Hosted on a dedicated GCP VM with a reverse proxy setup to avoid CORS and performance bottlenecks.
 
 ---
 
-## Acknowledgments
+## 🏗 System Design & Operations
 
-A project of this scale wouldn't be possible without the incredible work of others. We'd like to thank:
+For deep dives into how the system works and how to manage it, see:
 
-- Awesome README Templates
-- Img Shields
-- Font Awesome
-- [All contributors and supporters of this project]
+- [**Developer Guide**](DEVELOPER_GUIDE.md) — Architecture, local setup, CI/CD, and repository map.
+- [**Production Ops Guide**](PROD_OPS_GUIDE.md) — Monitoring, logs, backups, and scaling instructions.
+- [**Server Docs**](server/docs/README.md) — API specifications, database design, and best practices.
 
-<!-- MARKDOWN LINKS & IMAGES -->
+---
 
-[product-screenshot]: images/screenshot.png
-[TypeScript.org]: https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white
-[TypeScript-url]: https://www.typescriptlang.org/
-[Node.js.org]: https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white
-[Node.js-url]: https://nodejs.org/
-[Express.js.org]: https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white
-[Express-url]: http://expressjs.com/
+## Key Features
 
-https://www.npmjs.com/package/unstructured-client
+- **Multi-Modal Interaction**: Users can interact via text, links, files, and documents (including OCR support).
+- **Intelligent Memory Extraction**: Automatically distinguishes between episodic facts (bubbles) and semantic knowledge.
+- **Conversational Retrieval**: Talk to your memories using context-grounded RAG.
+- **Model Context Protocol (MCP)**: Native integration with AI tools like Claude for remote memory access.
+- **Local-First / Sovereignty**: You own your database; it can be fully self-hosted.
+
+---
+
+## How to Run
+...
+

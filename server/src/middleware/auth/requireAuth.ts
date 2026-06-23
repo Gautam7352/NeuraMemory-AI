@@ -13,6 +13,12 @@ import jwt from 'jsonwebtoken';
 import { env } from '../../config/env.js';
 import { AppError } from '../../utils/AppError.js';
 import type { AuthPayload } from '../../types/auth.types.js';
+import { findUserById } from '../../repositories/user.repository.js';
+
+/**
+ * Lightweight cache for token versions to avoid hitting DB on every request.
+ */
+const tokenVersionCache = new Map<string, number>();
 
 /**
  * Express middleware that:
@@ -21,11 +27,11 @@ import type { AuthPayload } from '../../types/auth.types.js';
  *  3. Attaches `{ userId, email }` to `req.user`.
  *  4. Rejects with 401 if the token is missing, malformed, or expired.
  */
-export function requireAuth(
+export async function requireAuth(
   req: Request,
   _res: Response,
   next: NextFunction,
-): void {
+): Promise<void> {
   try {
     let token: string | undefined;
 
@@ -36,20 +42,8 @@ export function requireAuth(
     }
 
     // 2. Fallback: Check for 'authorization' inside the Cookie header
-    if (!token && req.headers.cookie) {
-      // Manual parsing of the cookie string
-      const cookies = req.headers.cookie.split(';').reduce(
-        (acc, cookie) => {
-          const [key, value] = cookie.trim().split('=');
-          if (key) {
-            acc[key] = value || '';
-          }
-          return acc;
-        },
-        {} as Record<string, string>,
-      );
-
-      token = cookies['authorization'];
+    if (!token && req.cookies) {
+      token = req.cookies['authorization'];
     }
 
     // 3. If no token is found in either place, throw error
@@ -72,7 +66,27 @@ export function requireAuth(
     const payload: AuthPayload = {
       userId: decoded['userId'],
       email: decoded['email'],
+      tokenVersion: decoded['tokenVersion'],
     };
+
+    // 5. Verify token version against DB/Cache
+    let currentVersion = tokenVersionCache.get(payload.userId);
+    if (currentVersion === undefined) {
+      const user = await findUserById(payload.userId);
+      if (!user) {
+        throw new AppError(401, 'User no longer exists.');
+      }
+      currentVersion = user.tokenVersion;
+      if (tokenVersionCache.size > 2000) tokenVersionCache.clear();
+      tokenVersionCache.set(payload.userId, currentVersion);
+    }
+
+    if (payload.tokenVersion !== currentVersion) {
+      throw new AppError(
+        401,
+        'Session has been revoked or expired. Please log in again.',
+      );
+    }
 
     req.user = payload;
     next();

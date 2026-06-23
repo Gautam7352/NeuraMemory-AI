@@ -17,6 +17,7 @@ export function getOpenRouterClient(): OpenAI {
     openrouter = new OpenAI({
       baseURL: baseUrl,
       apiKey,
+      timeout: 60000,
       defaultHeaders: {
         ...(env.OPENROUTER_REFERER && {
           'HTTP-Referer': env.OPENROUTER_REFERER,

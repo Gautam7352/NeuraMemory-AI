@@ -37,20 +37,20 @@ export async function extractTextWithLocalOcr(
       );
     }
 
-    const chunks: string[] = [];
-    for (const image of images) {
-      const imagePath = path.join(tempDir, image);
-      const { stdout } = await runCommand('tesseract', [
-        imagePath,
-        'stdout',
-        '-l',
-        language,
-      ]);
-      if (stdout && stdout.trim()) {
-        chunks.push(stdout.trim());
-      }
-    }
+    const results = await Promise.all(
+      images.map(async (image) => {
+        const imagePath = path.join(tempDir, image);
+        const { stdout } = await runCommand('tesseract', [
+          imagePath,
+          'stdout',
+          '-l',
+          language,
+        ]);
+        return stdout && stdout.trim() ? stdout.trim() : null;
+      }),
+    );
 
+    const chunks = results.filter((chunk): chunk is string => chunk !== null);
     return chunks.join('\n\n').trim();
   } finally {
     await fs.rm(tempDir, { recursive: true, force: true });

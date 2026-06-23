@@ -20,7 +20,9 @@ import {
   getMemories,
   deleteMemories,
   deleteMemoryById,
+  updateMemoryById,
 } from '../controllers/memories/memorie.controller.js';
+import { memoryRateLimiter } from '../middleware/rateLimit.js';
 import { documentUpload } from '../middleware/upload.js';
 import { requireAuth } from '../middleware/auth/requireAuth.js';
 
@@ -34,13 +36,18 @@ router.use(requireAuth);
 // ---------------------------------------------------------------------------
 
 /** Plain text → extract → embed → store */
-router.post('/text', createFromText);
+router.post('/text', memoryRateLimiter, createFromText);
 
 /** URL / link → fetch content → extract → embed → store */
-router.post('/link', createFromLink);
+router.post('/link', memoryRateLimiter, createFromLink);
 
 /** Document upload → parse → extract → embed → store */
-router.post('/document', documentUpload.single('file'), createFromDocument);
+router.post(
+  '/document',
+  memoryRateLimiter,
+  documentUpload.single('file'),
+  createFromDocument,
+);
 
 // ---------------------------------------------------------------------------
 // Read / Delete
@@ -49,10 +56,13 @@ router.post('/document', documentUpload.single('file'), createFromDocument);
 /** List memories for the authenticated user */
 router.get('/', getMemories);
 
+/** Update a specific memory by ID */
+router.patch('/:id', updateMemoryById);
+
+/** Delete all memories for the authenticated user — must be before /:id */
+router.delete('/', deleteMemories);
+
 /** Delete a specific memory by ID */
 router.delete('/:id', deleteMemoryById);
-
-/** Delete all memories for the authenticated user */
-router.delete('/', deleteMemories);
 
 export default router;

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { Analytics } from '@vercel/analytics/react';
 
 import Navbar from './components/Navbar';
 import DashboardLayout from './components/DashboardLayout';
@@ -20,7 +21,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       .catch(() => setStatus('unauth'));
   }, []);
 
-  if (status === 'loading') return null;
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-neutral-950">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
   if (status === 'unauth') return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
@@ -34,7 +41,7 @@ function AppContent() {
         path="/manage-memories"
         element={
           <ProtectedRoute>
-            <div className="h-screen w-full bg-neutral-950 font-sans flex flex-col overflow-hidden">
+            <div className="min-h-screen w-full bg-neutral-950 font-sans flex flex-col">
               <Navbar />
               <ManageMemories />
             </div>
@@ -55,9 +62,10 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <AppContent />
-    </Router>
+      <Analytics />
+    </BrowserRouter>
   );
 }
 

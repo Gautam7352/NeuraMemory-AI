@@ -1,11 +1,11 @@
 # ─── Build Stage ─────────────────────────────────────────────────────────────
-FROM node:24-alpine AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
 # Install all dependencies (including devDependencies needed for tsc)
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 # Copy source and compile TypeScript → dist/
 COPY tsconfig.json ./
@@ -13,16 +13,22 @@ COPY src ./src
 RUN npm run build
 
 # ─── Production Stage ─────────────────────────────────────────────────────────
-FROM node:24-alpine AS runner
+FROM node:22-slim AS runner
 
 WORKDIR /app
 
 # Install OCR dependencies (pdftoppm + tesseract)
-RUN apk add --no-cache poppler-utils tesseract-ocr tesseract-ocr-data-eng ttf-dejavu
+# We use apt-get for debian-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    poppler-utils \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install only production dependencies
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Copy compiled output from the builder stage
 COPY --from=builder /app/dist ./dist

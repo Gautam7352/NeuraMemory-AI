@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { api } from '../lib/api';
+import SystemStatus from './SystemStatus';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -62,11 +63,11 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="w-full flex items-center justify-between px-6 py-3 bg-neutral-950 border-b border-neutral-800 shadow-sm z-50">
+    <nav className="w-full flex items-center justify-between px-3 sm:px-6 py-3 bg-neutral-950 border-b border-neutral-800 shadow-sm z-50">
       {/* ── Logo ────────────────────────────────────────── */}
       <button
         onClick={() => navigate('/')}
-        className="flex flex-col items-start gap-0.5 focus:outline-none"
+        className="flex items-center gap-2 focus:outline-none shrink-0"
       >
         <span className="flex items-center gap-2">
           {/* Icon */}
@@ -138,8 +139,13 @@ const Navbar = () => {
         </span>
       </button>
 
+      {/* System Status Indicator (New) */}
+      <div className="hidden md:block mr-auto ml-8">
+        <SystemStatus />
+      </div>
+
       {/* ── Right: nav links + avatar ────────────────────── */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         {/* Manage Memories shortcut */}
         <button
           onClick={handleManageMemories}

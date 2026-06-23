@@ -14,6 +14,7 @@ export function getQdrantClient(): QdrantClient {
     qdrant = new QdrantClient({
       url,
       ...(apiKey ? { apiKey } : {}),
+      timeout: 30000, // 30 seconds
     });
     console.log(`--- Qdrant Client Initialized at ${url} ---`);
   }

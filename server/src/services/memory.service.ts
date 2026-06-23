@@ -5,13 +5,28 @@ import {
   extractTextFromDocument,
 } from '../utils/content-extractors.js';
 import {
+  extractTextWithUnstructured,
+  isUnstructuredConfigured,
+} from '../lib/unstructured.js';
+import {
   upsertMemories,
   getMemoriesByUser,
   deleteMemoriesByUser,
   deleteMemoryById,
   searchMemories,
+  getMemoryPointById,
+  updateMemoryPoint,
+  searchMemoriesScored,
+  deleteMemoriesByIds,
+  updatePayloadFields,
 } from '../repositories/memory.repository.js';
+import { checkBeforeStore } from '../services/conflict-detection.service.js';
+import { env } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
+import { withTransaction } from '../lib/postgres.js';
+import { lockUser } from '../repositories/user.repository.js';
+import { logger } from '../utils/logger.js';
+import pLimit from 'p-limit';
 import type {
   PlainTextInput,
   DocumentInput,
@@ -20,6 +35,7 @@ import type {
   MemoryEntry,
   MemorySource,
   StoredMemoryPayload,
+  IncomingMemory,
 } from '../types/memory.types.js';
 
 async function processText(
@@ -52,6 +68,11 @@ async function processText(
   ];
 
   if (entries.length === 0) {
+    if (rawText.length > 20) {
+      logger.error(
+        `[processText] Extraction yielded 0 results for significant input (${rawText.length} chars). Potential LLM extraction breakdown.`,
+      );
+    }
     return {
       success: true,
       message: 'Text processed but no extractable memories found.',
@@ -83,17 +104,147 @@ async function processText(
     } satisfies StoredMemoryPayload,
   }));
 
-  await upsertMemories(points);
+  // Use single transaction + row lock to serialize ingestion per user
+  return await withTransaction(async (client) => {
+    // 1. Lock this user's record so no other ingestion runs concurrently for them
+    await lockUser(client, userId);
 
-  return {
-    success: true,
-    message: `Successfully stored ${entries.length} memor${entries.length === 1 ? 'y' : 'ies'}.`,
-    data: {
-      memoriesStored: entries.length,
-      semantic: extracted.semantic,
-      bubbles: extracted.bubbles,
-    },
-  };
+    const limit = pLimit(5);
+    const results = await Promise.all(
+      points.map((point) =>
+        limit(async () => {
+          const incomingMemory: IncomingMemory = {
+            text: point.payload.text,
+            vector: point.vector,
+            kind: point.payload.kind,
+            importance: point.payload.importance,
+            source: point.payload.source,
+            createdAt: point.payload.createdAt,
+          };
+
+          try {
+            const candidates = await searchMemoriesScored(
+              point.vector,
+              userId,
+              10,
+            );
+            const resolution = await checkBeforeStore(
+              incomingMemory,
+              candidates,
+              env.CONFLICT_STRATEGY,
+            );
+            return { point, candidates, resolution };
+          } catch (err) {
+            console.warn(
+              '[processText] Point processing failed, falling back to simple store:',
+              err instanceof Error ? err.message : err,
+            );
+            return {
+              point,
+              candidates: [],
+              resolution: {
+                action: 'store',
+                pointsToDelete: [],
+                pointToStore: incomingMemory,
+              } as const,
+            };
+          }
+        }),
+      ),
+    );
+
+    const toUpsert: Array<{ vector: number[]; payload: StoredMemoryPayload }> =
+      [];
+    const toDelete = new Set<string>();
+    const toUpdatePayloads: Array<{
+      ids: string[];
+      fields: Partial<StoredMemoryPayload>;
+    }> = [];
+
+    for (const { point, candidates, resolution } of results) {
+      switch (resolution.action) {
+        case 'store': {
+          toUpsert.push(point);
+          break;
+        }
+        case 'replace':
+        case 'merge': {
+          for (const id of resolution.pointsToDelete) {
+            const existing = candidates.find((c: any) => c.id === id);
+            if (existing && existing.payload.userId === userId) {
+              toDelete.add(id);
+            }
+          }
+          if (resolution.pointToStore) {
+            toUpsert.push({
+              vector: resolution.pointToStore.vector,
+              payload: {
+                ...resolution.pointToStore,
+                userId,
+              } as StoredMemoryPayload,
+            });
+          }
+          break;
+        }
+        case 'flag': {
+          if (resolution.pointToStore) {
+            toUpsert.push({
+              vector: resolution.pointToStore.vector,
+              payload: {
+                ...resolution.pointToStore,
+                userId,
+              } as StoredMemoryPayload,
+            });
+          }
+          if (resolution.conflictGroupId) {
+            const idsToFlag = candidates
+              .filter(
+                (c: any) =>
+                  c.score >= env.SIMILARITY_THRESHOLD &&
+                  c.payload.userId === userId,
+              )
+              .map((c: any) => c.id);
+
+            if (idsToFlag.length > 0) {
+              toUpdatePayloads.push({
+                ids: idsToFlag,
+                fields: {
+                  conflicted: true,
+                  conflictGroupId: resolution.conflictGroupId,
+                },
+              });
+            }
+          }
+          break;
+        }
+        case 'skip':
+          break;
+      }
+    }
+
+    // Execute batch operations
+    if (toDelete.size > 0) {
+      await deleteMemoriesByIds(Array.from(toDelete));
+    }
+    if (toUpsert.length > 0) {
+      await upsertMemories(toUpsert);
+    }
+    for (const update of toUpdatePayloads) {
+      await updatePayloadFields(update.ids, update.fields);
+    }
+
+    const memoriesStoredCount = toUpsert.length;
+
+    return {
+      success: true,
+      message: `Successfully processed document. Stored ${memoriesStoredCount} memory point(s).`,
+      data: {
+        memoriesStored: memoriesStoredCount,
+        semantic: extracted.semantic,
+        bubbles: extracted.bubbles,
+      },
+    };
+  });
 }
 
 export async function processPlainText(
@@ -105,13 +256,25 @@ export async function processPlainText(
 export async function processDocument(
   input: DocumentInput,
 ): Promise<MemoryResponse> {
-  const text = await extractTextFromDocument(input.buffer, input.mimetype);
-  return processText(text, input.userId, 'document', input.filename);
+  const text = isUnstructuredConfigured()
+    ? await extractTextWithUnstructured(
+        input.buffer,
+        input.filename,
+        input.mimetype,
+      )
+    : await extractTextFromDocument(input.buffer, input.mimetype);
+
+  const limit = pLimit(3);
+  return limit(() =>
+    processText(text, input.userId, 'document', input.filename),
+  );
 }
 
 export async function processLink(input: LinkInput): Promise<MemoryResponse> {
   const text = await extractTextFromUrl(input.url);
-  return processText(text, input.userId, 'link', input.url);
+
+  const limit = pLimit(5);
+  return limit(() => processText(text, input.userId, 'link', input.url));
 }
 
 export async function getUserMemories(
@@ -146,10 +309,38 @@ export async function deleteUserMemoryById(
   userId: string,
   pointId: string,
 ): Promise<void> {
-  // Note: Qdrant doesn't enforce userId on point deletion by ID,
+  // Qdrant doesn't enforce userId on point deletion by ID,
   // so we verify ownership by checking the point exists for this user first.
-  // For simplicity in this implementation, we trust the auth middleware
-  // ensures the user is authenticated, and delete directly.
-  void userId;
+  const point = await getMemoryPointById(pointId);
+
+  if (!point || point.payload.userId !== userId) {
+    throw new AppError(
+      403,
+      'Forbidden: memory does not exist or does not belong to this user.',
+    );
+  }
+
   await deleteMemoryById(pointId);
+}
+
+export async function updateMemoryById(
+  userId: string,
+  pointId: string,
+  newText: string,
+): Promise<void> {
+  if (!newText.trim()) {
+    throw new AppError(400, 'Memory text cannot be empty.');
+  }
+
+  const point = await getMemoryPointById(pointId);
+  if (!point || point.payload.userId !== userId) {
+    throw new AppError(403, 'Forbidden: memory does not belong to this user.');
+  }
+
+  const [vector] = await generateEmbeddings([newText]);
+  if (!vector) {
+    throw new AppError(500, 'Embedding generation returned no result.');
+  }
+
+  await updateMemoryPoint(pointId, vector, newText, point.payload);
 }

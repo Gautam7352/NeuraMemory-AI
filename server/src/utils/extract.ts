@@ -7,11 +7,13 @@
 
 import { getOpenRouterClient } from '../lib/openrouter.js';
 import systemPrompt from './systemPrompt.js';
+import { ExtractedMemories } from '../types/memory.types.js';
+import { logger } from './logger.js';
 import { AppError } from './AppError.js';
-import type { ExtractedMemories } from '../types/memory.types.js';
 
-/** The model to use for extraction — tunable via env in the future */
+/** The model ID for extraction — verified as functional on OpenRouter */
 const EXTRACTION_MODEL = 'google/gemini-2.0-flash-001';
+/** Fallback model if the primary is unavailable/404 */
 
 /** Maximum input text length sent to the LLM (characters) */
 const MAX_CHUNK_SIZE = 6000; // chars per chunk
@@ -125,22 +127,16 @@ export async function extractMemories(
 
 /**
  * Parses and validates the raw JSON string returned by the LLM.
- * Gracefully handles malformed or unexpected shapes.
  */
 function parseExtractionResponse(raw: string): ExtractedMemories {
   try {
     const parsed: unknown = JSON.parse(raw);
 
     if (typeof parsed !== 'object' || parsed === null) {
-      console.warn(
-        '[ExtractMemories] LLM returned non-object JSON — treating as empty.',
-      );
       return { semantic: [], bubbles: [] };
     }
 
     const obj = parsed as Record<string, unknown>;
-
-    // --- semantic ---
     const semantic: string[] = [];
     if (Array.isArray(obj['semantic'])) {
       for (const item of obj['semantic']) {
@@ -150,7 +146,6 @@ function parseExtractionResponse(raw: string): ExtractedMemories {
       }
     }
 
-    // --- bubbles ---
     const bubbles: ExtractedMemories['bubbles'] = [];
     if (Array.isArray(obj['bubbles'])) {
       for (const item of obj['bubbles']) {
@@ -175,11 +170,11 @@ function parseExtractionResponse(raw: string): ExtractedMemories {
     }
 
     return { semantic, bubbles };
-  } catch {
-    console.warn(
-      '[ExtractMemories] Failed to parse LLM response as JSON:',
-      raw.slice(0, 200),
-    );
+  } catch (err) {
+    logger.error('[ExtractMemories] Failed to parse LLM response as JSON:', {
+      error: err instanceof Error ? err.message : String(err),
+      rawSnippet: raw.slice(0, 200),
+    });
     return { semantic: [], bubbles: [] };
   }
 }

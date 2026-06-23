@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
+import { env } from '../config/env.js';
 import {
   loginService,
   registerService,
@@ -49,22 +50,15 @@ export async function loginController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const result = loginSchema.safeParse(req.body);
-    if (!result.success) {
-      throw new AppError(
-        400,
-        result.error.errors[0]?.message ?? 'Invalid input.',
-      );
-    }
+    const { email, password } = loginSchema.parse(req.body);
 
-    const { email, password } = result.data;
     const response = await loginService(email, password);
 
     res.cookie('authorization', response.token, {
       httpOnly: true,
-      secure: process.env['NODE_ENV'] === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 1000,
+      secure: env.NODE_ENV === 'production',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: COOKIE_MAX_AGE_MS,
     });
 
     res.status(200).json(response);
@@ -79,25 +73,19 @@ export async function registerController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const result = registerSchema.safeParse(req.body);
-    if (!result.success) {
-      throw new AppError(
-        400,
-        result.error.errors[0]?.message ?? 'Invalid input.',
-      );
-    }
+    const { email, password } = registerSchema.parse(req.body);
 
-    const { email, password } = result.data;
     const response = await registerService(email, password);
 
     res.cookie('authorization', response.token, {
       httpOnly: true,
-      secure: process.env['NODE_ENV'] === 'production',
-      sameSite: 'lax',
+      secure: env.NODE_ENV === 'production',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: COOKIE_MAX_AGE_MS,
     });
 
     const { token: _token, ...safeResponse } = response;
+    void _token; // Mark as used to satisfy lint
     res.status(201).json(safeResponse);
   } catch (err) {
     next(err);
@@ -127,17 +115,27 @@ export async function generateApiKeyController(
 }
 
 export async function logoutController(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
+    const userId = req.user?.userId;
+    if (userId) {
+      const { revokeSessionsService } =
+        await import('../services/auth.service.js');
+      await revokeSessionsService(userId);
+    }
+
     res.clearCookie('authorization', {
       httpOnly: true,
-      secure: process.env['NODE_ENV'] === 'production',
-      sameSite: 'lax',
+      secure: env.NODE_ENV === 'production',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
-    res.status(200).json({ success: true, message: 'Logged out successfully' });
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully. All sessions revoked.',
+    });
   } catch (err) {
     next(err);
   }
@@ -161,7 +159,8 @@ export async function meController(
       throw new AppError(404, 'User not found');
     }
 
-    const safeUser = { ...user };
+    const { id, email, createdAt, updatedAt } = user;
+    const safeUser = { id, email, createdAt, updatedAt };
     res.status(200).json({ success: true, data: { user: safeUser } });
   } catch (err) {
     next(err);

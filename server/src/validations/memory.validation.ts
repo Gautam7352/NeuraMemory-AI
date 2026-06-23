@@ -38,6 +38,7 @@ export const ALLOWED_DOCUMENT_MIMES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
   'text/plain',
   'text/markdown',
+  'text/csv',
 ] as const;
 
 /** Max file size in bytes (10 MB) */

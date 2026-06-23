@@ -17,7 +17,9 @@ app.use(helmet());
 app.use(express.json({ limit: '200kb' }));
 
 // cors addition
-const allowedOrigins = env.ALLOWED_ORIGINS.split(',').map((o: string) => o.trim()).filter(Boolean);
+const allowedOrigins = env.ALLOWED_ORIGINS.split(',')
+  .map((o: string) => o.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
@@ -115,7 +117,9 @@ async function shutdown(signal: string): Promise<void> {
       closeQdrantClient();
       console.log('[Shutdown] Qdrant client closed.');
     } catch {
-      console.log('[Shutdown] Qdrant client was not initialized or already closed.');
+      console.log(
+        '[Shutdown] Qdrant client was not initialized or already closed.',
+      );
     }
 
     console.log('[Shutdown] Completed successfully.');
@@ -158,7 +162,10 @@ async function main(): Promise<void> {
     await qdrant.getCollections();
     console.log('[Startup] Qdrant connectivity verified.');
   } catch (err) {
-    console.error('[Startup] WARNING: Qdrant is unreachable. Memory operations will fail.', err);
+    console.error(
+      '[Startup] WARNING: Qdrant is unreachable. Memory operations will fail.',
+      err,
+    );
   }
 
   const port = Number(env.PORT);

@@ -17,7 +17,10 @@ const envSchema = z.object({
   OPENROUTER_REFERER: z.string().url().optional(),
   OPENROUTER_TITLE: z.string().optional(),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  JWT_EXPIRES_IN: z.string().default('7d').transform(val => val.split('#')[0]!.trim()),
+  JWT_EXPIRES_IN: z
+    .string()
+    .default('7d')
+    .transform((val) => val.split('#')[0]!.trim()),
   UNSTRUCTURED_API_URL: z
     .string()
     .url()
@@ -27,7 +30,9 @@ const envSchema = z.object({
   OCR_ENABLE_LOCAL_FALLBACK: z.string().default('true'),
   OCR_TESSERACT_LANG: z.string().default('eng'),
   OCR_FORCE: z.string().default('false'),
-  ALLOWED_ORIGINS: z.string().default('http://localhost:5173,http://localhost:5174'),
+  ALLOWED_ORIGINS: z
+    .string()
+    .default('http://localhost:5173,http://localhost:5174'),
 });
 
 const _env = envSchema.safeParse(process.env);

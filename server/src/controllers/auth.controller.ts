@@ -90,10 +90,10 @@ export async function registerController(
     const { email, password } = result.data;
     const response = await registerService(email, password);
 
-    res.cookie("authorization", response.token, {
+    res.cookie('authorization', response.token, {
       httpOnly: true,
-      secure: process.env['NODE_ENV'] === "production",
-      sameSite: "lax",
+      secure: process.env['NODE_ENV'] === 'production',
+      sameSite: 'lax',
       maxAge: COOKIE_MAX_AGE_MS,
     });
 
@@ -153,7 +153,7 @@ export async function meController(
     if (!userId) {
       throw new AppError(401, 'Unauthorized');
     }
-    
+
     // We can just import and use findUserById from repository
     const { findUserById } = await import('../repositories/user.repository.js');
     const user = await findUserById(userId);

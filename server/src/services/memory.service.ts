@@ -105,10 +105,7 @@ export async function processPlainText(
 export async function processDocument(
   input: DocumentInput,
 ): Promise<MemoryResponse> {
-  const text = await extractTextFromDocument(
-    input.buffer,
-    input.mimetype,
-  );
+  const text = await extractTextFromDocument(input.buffer, input.mimetype);
   return processText(text, input.userId, 'document', input.filename);
 }
 
@@ -119,7 +116,12 @@ export async function processLink(input: LinkInput): Promise<MemoryResponse> {
 
 export async function getUserMemories(
   userId: string,
-  options?: { kind?: string; source?: MemorySource; limit?: number; offset?: string | null },
+  options?: {
+    kind?: string;
+    source?: MemorySource;
+    limit?: number;
+    offset?: string | null;
+  },
 ): Promise<{ points: StoredMemoryPayload[]; nextOffset: string | null }> {
   return getMemoriesByUser(userId, options);
 }

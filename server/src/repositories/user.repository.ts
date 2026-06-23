@@ -35,8 +35,6 @@ export async function findUserByApiKey(
   return db.collection<IUser>(COLLECTION).findOne({ apiKey });
 }
 
-
-
 /**
  * Finds a single user document by its MongoDB ObjectId string.
  *
@@ -82,5 +80,8 @@ export async function updateUserApiKey(
   const db = await getDb();
   await db
     .collection<IUser>(COLLECTION)
-    .updateOne({ _id: new ObjectId(id) }, { $set: { apiKey, updatedAt: new Date() } });
+    .updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { apiKey, updatedAt: new Date() } },
+    );
 }

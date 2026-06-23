@@ -114,7 +114,10 @@ const swaggerSpec: JsonObject = {
         type: 'object',
         properties: {
           success: { type: 'boolean', example: true },
-          message: { type: 'string', example: 'API key generated successfully.' },
+          message: {
+            type: 'string',
+            example: 'API key generated successfully.',
+          },
           apiKey: { type: 'string', example: 'sk_8f7d9a0c1b2e3d4f5g...' },
         },
         required: ['success', 'message', 'apiKey'],
@@ -649,7 +652,8 @@ const swaggerSpec: JsonObject = {
       get: {
         tags: ['MCP'],
         summary: 'MCP Health Check',
-        description: 'Simple unauthenticated endpoint to verify the MCP server is alive.',
+        description:
+          'Simple unauthenticated endpoint to verify the MCP server is alive.',
         responses: {
           '200': {
             description: 'MCP server is healthy',
@@ -662,14 +666,16 @@ const swaggerSpec: JsonObject = {
       get: {
         tags: ['MCP'],
         summary: 'Establish MCP SSE Connection',
-        description: 'Endpoint to establish a Server-Sent Events stream for Model Context Protocol. A valid user API Key is strictly required.',
+        description:
+          'Endpoint to establish a Server-Sent Events stream for Model Context Protocol. A valid user API Key is strictly required.',
         parameters: [
           {
             name: 'apiKey',
             in: 'query',
             required: false,
             schema: { type: 'string' },
-            description: 'User API Key. Can also be provided via the `Authorization: Bearer <key>` or `x-api-key` HTTP headers.',
+            description:
+              'User API Key. Can also be provided via the `Authorization: Bearer <key>` or `x-api-key` HTTP headers.',
           },
         ],
         responses: {
